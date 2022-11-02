@@ -5,14 +5,14 @@ import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
-public class MecanumSubsystem extends SubsystemBase {
+public class DriveSubsystem extends SubsystemBase {
     private Motor lf;
     private Motor lb;
     private Motor rf;
     private Motor rb;
-    private MecanumDrive mecanumDrive;
+    private final MecanumDrive mecanumDrive;
 
-    public MecanumSubsystem(Motor lf, Motor lb, Motor rf, Motor rb){
+    public DriveSubsystem(Motor lf, Motor lb, Motor rf, Motor rb){
         this.lf = lf;
         this.lb = lb;
         this.rf = rf;
@@ -20,8 +20,15 @@ public class MecanumSubsystem extends SubsystemBase {
 
         mecanumDrive = new MecanumDrive(lf, rf, lb, rb);
     }
+    /**
+     * Drives the robot using arcade controls.
+     *
+     * @param str the commanded strafe movement
+     * @param fwd the commanded forward movement
+     * @param rot the commanded rotation movement
+     */
 
     public void drive(double str, double fwd, double rot){
-        mecanumDrive.driveRobotCentric(str, fwd, rot);
+        mecanumDrive.driveRobotCentric(-str, -fwd, -rot);
     }
 }
