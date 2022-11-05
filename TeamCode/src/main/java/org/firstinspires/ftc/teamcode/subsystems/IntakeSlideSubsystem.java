@@ -16,6 +16,10 @@ public class IntakeSlideSubsystem extends SubsystemBase implements IntakeSlideIn
         this.slideServoR = slideServoR;
     }
 
+    /**
+     * Sets the servos to the intake position
+     * @param slideIntakePosition gets to desired position
+     */
     public void slideIntake(double slideIntakePosition) {
         slideServoL.setPosition(slideIntakePosition);
         slideServoR.setPosition(slideIntakePosition);

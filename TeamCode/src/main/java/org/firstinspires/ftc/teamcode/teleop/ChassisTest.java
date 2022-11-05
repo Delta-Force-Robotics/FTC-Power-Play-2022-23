@@ -15,7 +15,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Constants.Constants;
-import org.firstinspires.ftc.teamcode.Threads.SlideIntermediateThread;
+import org.firstinspires.ftc.teamcode.Constants.HardwareConstants;
+import org.firstinspires.ftc.teamcode.Threads.ScoreThread;
 import org.firstinspires.ftc.teamcode.Threads.SlideThread;
 import org.firstinspires.ftc.teamcode.commands.DriveCommand;
 import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
@@ -25,16 +26,15 @@ import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 
 @TeleOp(name="ChassisTest")
-
 public class ChassisTest extends CommandOpMode {
-
-    private Motor lf;
-    private Motor lb;
-    private Motor rf;
-    private Motor rb;
+    private Motor leftFront;
+    private Motor leftBack;
+    private Motor rightFront;
+    private Motor rightBack;
     private Motor turretMotor;
-    private Motor slideMotor1;
-    private Motor slideMotor2;
+    private Motor slideMotorLeft;
+    private Motor slideMotorRight;
+
     private Servo slideServoL;
     private Servo slideServoR;
     private Servo intakeL;
@@ -42,6 +42,7 @@ public class ChassisTest extends CommandOpMode {
 
     private GamepadEx driver1;
     private GamepadEx driver2;
+
     private DriveSubsystem driveSubsystem;
     private DriveCommand driveCommand;
 
@@ -55,7 +56,7 @@ public class ChassisTest extends CommandOpMode {
     SlideThread midJunctionThread;
     SlideThread lowJunctionThread;
     SlideThread highJunctionThread;
-    Thread slideIntermediaryThread;
+    ScoreThread scoreThread;
 
     InstantCommand startPos;
     InstantCommand extendedSlide;
@@ -64,20 +65,20 @@ public class ChassisTest extends CommandOpMode {
     InstantCommand closeClaw;
 
     @Override
-    public void initialize(){
-        lf = new Motor(hardwareMap, "lf");
-        lb = new Motor(hardwareMap, "lb");
-        rf = new Motor(hardwareMap, "rf");
-        rb = new Motor(hardwareMap, "rb");
-        turretMotor = new Motor(hardwareMap, "turretMotor");
-        slideMotor1 = new Motor(hardwareMap, "slideMotor1");
-        slideMotor2 = new Motor(hardwareMap, "slideMotor2");
+    public void initialize() {
+        leftFront = new Motor(hardwareMap, HardwareConstants.ID_LEFT_FRONT_MOTOR);
+        leftBack = new Motor(hardwareMap, HardwareConstants.ID_LEFT_BACK_MOTOR);
+        rightFront = new Motor(hardwareMap, HardwareConstants.ID_RIGHT_FRONT_MOTOR);
+        rightBack = new Motor(hardwareMap, HardwareConstants.ID_RIGHT_BACK_MOTOR);
+        turretMotor = new Motor(hardwareMap, HardwareConstants.ID_TURRET_MOTOR);
+        slideMotorLeft = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
+        slideMotorRight = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_RIGHT);
 
-        slideServoL = hardwareMap.get(Servo.class, "linkageServoL");
-        slideServoR = hardwareMap.get(Servo.class, "linkageServoR");
+        slideServoL = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
+        slideServoR = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_RIGHT);
 
-        intakeL = hardwareMap.get(Servo.class, "ClawServoL");
-        intakeR = hardwareMap.get(Servo.class, "ClawServoR");
+        intakeL = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_LEFT);
+        intakeR = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_RIGHT);
 
         slideServoL.setDirection(Servo.Direction.REVERSE);
         intakeL.setDirection(Servo.Direction.REVERSE);
@@ -88,39 +89,38 @@ public class ChassisTest extends CommandOpMode {
         intakeL.setPosition(0);
         intakeR.setPosition(0);
 
-        lf.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        lb.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        rf.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        rb.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        leftFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        leftBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        rightFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        rightBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         turretMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        slideMotor1.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        slideMotor2.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-
+        slideMotorLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        slideMotorRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
 
-        driveSubsystem= new DriveSubsystem(lf, lb, rf, rb);
+        driveSubsystem = new DriveSubsystem(leftFront, leftBack, rightFront, rightBack);
         driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX);
 
         turretSubsystem = new TurretSubsystem(turretMotor);
-        slideSubsystem = new SlideSubsystem(slideMotor1, slideMotor2);
+        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight);
         intakeSlideSubsystem = new IntakeSlideSubsystem(slideServoL, slideServoR);
         intakeSubsystem = new IntakeSubsystem(intakeL, intakeR);
 
+        // Instantiate threads and instant commands.
+        grJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_GR_JUNCTION);
+        lowJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_LOW_JUNCTION);
+        midJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_MID_JUNCTION);
+        highJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_HIGH_JUNCTION);
 
-         grJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_GR_JUNCTION);
-         lowJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_LOW_JUNCTION);
-         midJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_MID_JUNCTION);
-         highJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_HIGH_JUNCTION);
+        scoreThread = new ScoreThread(intakeSubsystem::useClaw, intakeSlideSubsystem::slideIntake, slideSubsystem::setLevel, turretSubsystem::rotateTurret);
 
-        slideIntermediaryThread = new SlideIntermediateThread(intakeSubsystem::useClaw, intakeSlideSubsystem::slideIntake, slideSubsystem::setLevel, turretSubsystem::rotateTurret);
-
-        startPos = new InstantCommand(() ->{
+        startPos = new InstantCommand(() -> {
             intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_INIT_POSITION);
         }, slideSubsystem);
 
-        extendedSlide = new InstantCommand(() ->{
+        extendedSlide = new InstantCommand(() -> {
             intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
         }, slideSubsystem);
 
@@ -132,11 +132,12 @@ public class ChassisTest extends CommandOpMode {
             intakeSubsystem.useClaw(Constants.CLOSE_CLAW);
         });
 
+        // Assign commands and threads to buttons.
         Button turretRotateButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> turretTurn10.start());
-        Button slideGrJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.start());
-        Button slideMidJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.B).whenPressed(() -> midJunctionThread.start());
-        Button slideLowJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.X).whenPressed(() -> lowJunctionThread.start());
-        Button slideHighJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.Y).whenPressed(() -> highJunctionThread.start());
+        Button slideGrJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.run());
+        Button slideMidJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.B).whenPressed(() -> midJunctionThread.run());
+        Button slideLowJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.X).whenPressed(() -> lowJunctionThread.run());
+        Button slideHighJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.Y).whenPressed(() -> highJunctionThread.run());
         Button startPosButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(startPos);
         Button extendedSlideButton = new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(extendedSlide);
         Button openClawButton = new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(openClaw);

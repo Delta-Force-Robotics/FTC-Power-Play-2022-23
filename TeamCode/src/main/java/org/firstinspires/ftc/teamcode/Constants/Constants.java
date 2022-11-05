@@ -1,5 +1,10 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
+/**
+ * A class containing all constants for subsystems. <br><br>
+ * This allows us to share constants across OP modes, and makes it easier to change them.
+ */
+
 public class Constants {
     //Slide Subsystem
     public static final int SLIDE_GR_JUNCTION = 0;

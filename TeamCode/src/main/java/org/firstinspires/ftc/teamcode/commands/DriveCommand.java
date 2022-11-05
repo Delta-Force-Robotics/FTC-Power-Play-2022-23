@@ -4,11 +4,11 @@ import com.arcrobotics.ftclib.command.CommandBase;
 import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
 import java.util.function.DoubleSupplier;
 
-    /*
-    This is our drive command. This works hand in hand with the DriveSubsystem class.
-    Using our DualShock 4 Controllers we control the chassis.
-    The motors get assigned power from -1 to 1 based on how far we push the joysticks.
-     */
+    /**
+    * This is our drive command. This works hand in hand with the DriveSubsystem class.
+    * Using our DualShock 4 Controllers we control the chassis.
+    * The motors get assigned power from -1 to 1 based on how far we push the joysticks.
+     **/
 
 public class DriveCommand extends CommandBase {
 
@@ -22,7 +22,7 @@ public class DriveCommand extends CommandBase {
      * @param forward   The control input for driving forwards/backwards
      * @param strafe    The control input for driving sideways
      * @param rotation  The control input for turning
-     */
+     **/
 
     public DriveCommand(DriveSubsystem subsystem, DoubleSupplier strafe, DoubleSupplier forward, DoubleSupplier rotation) {
         driveSubsystem = subsystem;
@@ -31,6 +31,10 @@ public class DriveCommand extends CommandBase {
         this.rotation = rotation;
         addRequirements(driveSubsystem);
     }
+
+        /**
+         * Execute uses the instances strafe, forward and rotation.
+         **/
 
     @Override
     public void execute() {

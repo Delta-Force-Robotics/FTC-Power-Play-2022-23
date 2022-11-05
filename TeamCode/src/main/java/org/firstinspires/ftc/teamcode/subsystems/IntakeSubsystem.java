@@ -10,12 +10,16 @@ public class IntakeSubsystem extends SubsystemBase implements IntakeInterface {
     private Servo intakeL;
     private Servo intakeR;
 
-    public IntakeSubsystem(Servo intakeL, Servo intakeR){
+    public IntakeSubsystem(Servo intakeL, Servo intakeR) {
         this.intakeL = intakeL;
         this.intakeR = intakeR;
     }
 
-    public void useClaw(double clawPosition){
+    /**
+     * Open/Close claw
+     * @param clawPosition sets the claw to desired position
+     */
+    public void useClaw(double clawPosition) {
         intakeL.setPosition(clawPosition);
         intakeR.setPosition(clawPosition);
     }
