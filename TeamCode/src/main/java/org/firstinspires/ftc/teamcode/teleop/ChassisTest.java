@@ -14,16 +14,17 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.Constants.Constants;
-import org.firstinspires.ftc.teamcode.Constants.HardwareConstants;
-import org.firstinspires.ftc.teamcode.Threads.ScoreThread;
-import org.firstinspires.ftc.teamcode.Threads.SlideThread;
+import org.firstinspires.ftc.teamcode.constants.Constants;
+import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
+import org.firstinspires.ftc.teamcode.threads.ScoreThread;
+import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import org.firstinspires.ftc.teamcode.commands.DriveCommand;
 import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
+import org.openftc.apriltag.AprilTagDetection;
 
 @TeleOp(name="ChassisTest")
 public class ChassisTest extends CommandOpMode {
@@ -64,6 +65,7 @@ public class ChassisTest extends CommandOpMode {
     InstantCommand openClaw;
     InstantCommand closeClaw;
 
+    AprilTagDetection aprilTagDetection;
     @Override
     public void initialize() {
         leftFront = new Motor(hardwareMap, HardwareConstants.ID_LEFT_FRONT_MOTOR);

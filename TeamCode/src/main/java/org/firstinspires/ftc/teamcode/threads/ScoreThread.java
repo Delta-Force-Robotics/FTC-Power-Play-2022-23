@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Threads;
+package org.firstinspires.ftc.teamcode.threads;
 
 import org.firstinspires.ftc.teamcode.Interfaces.IntakeInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;

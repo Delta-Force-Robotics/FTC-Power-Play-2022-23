@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Constants;
+package org.firstinspires.ftc.teamcode.constants;
 
 /**
  * A class containing all constants for motors' and servos' titles. <br><br>
