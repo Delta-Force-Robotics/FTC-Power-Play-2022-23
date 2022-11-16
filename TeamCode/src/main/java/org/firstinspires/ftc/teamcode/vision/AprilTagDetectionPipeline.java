@@ -63,6 +63,9 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
     double tagsizeX;
     double tagsizeY;
 
+    public double alpha, beta; // automatic brightness adjustment
+    public double greyMax, greyMin;
+
     private float decimation;
     private boolean needToSetDecimation;
     private final Object decimationSync = new Object();
@@ -104,7 +107,23 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
     {
         // Convert to greyscale
         Imgproc.cvtColor(input, grey, Imgproc.COLOR_RGBA2GRAY);
+        Mat m = new Mat(input.rows(), input.cols(), input.type());
+        grey.copyTo(m);
 
+        greyMax = 0;
+        greyMin = 255;
+        for(int i = 0; i < grey.height(); i++)
+            for(int j = 0; j < grey.width(); j++){
+                double[] data = grey.get(i, j);
+
+                greyMax = Math.max(greyMax, data[0]);
+                greyMin = Math.min(greyMax, data[0]);
+            }
+
+        alpha = 255/(greyMax - greyMin);
+        beta = -greyMin*alpha;
+
+        m.convertTo(grey, -1, alpha, beta);
         synchronized (decimationSync)
         {
             if(needToSetDecimation)
@@ -131,7 +150,7 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
             draw3dCubeMarker(input, tagsizeX, tagsizeX, tagsizeY, 5, pose.rvec, pose.tvec, cameraMatrix);
         }
 
-        return input;
+        return grey;
     }
 
     public void setDecimation(float decimation)
@@ -287,6 +306,8 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
 
         return pose;
     }
+
+
 
     /*
      * A simple container to hold both rotation and translation

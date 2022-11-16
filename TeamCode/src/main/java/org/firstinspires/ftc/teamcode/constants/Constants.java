@@ -6,6 +6,7 @@ package org.firstinspires.ftc.teamcode.constants;
  */
 
 public class Constants {
+
     //Slide Subsystem
     public static final int SLIDE_GR_JUNCTION = 0;
     public static final int SLIDE_MID_JUNCTION = 0;
@@ -19,11 +20,11 @@ public class Constants {
     public static final double INTAKE_SLIDE_EXTEND_10 = 0;
 
     //Turret Subsystem
-    public static final int TURRET_TURN_10 = 0;
-    public static final int TURRET_TURN_20 = 0;
-    public static final int TURRET_TURN_30 = 0;
+    public static final int TURRET_TURN_10 = 21;
+    public static final int TURRET_TURN_20 = 42;
+    public static final int TURRET_TURN_30 = 63;
 
-    //Intake Subsystem
+    //Claw Subsystem
     public static final double OPEN_CLAW = 0;
     public static final double CLOSE_CLAW = 0;
 

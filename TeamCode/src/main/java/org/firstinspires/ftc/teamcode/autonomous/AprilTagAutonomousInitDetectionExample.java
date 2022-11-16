@@ -21,6 +21,7 @@
 
 package org.firstinspires.ftc.teamcode.autonomous;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -33,8 +34,9 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
 
 import java.util.ArrayList;
+import java.util.Vector;
 
-@TeleOp
+@Autonomous
 public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
 {
     OpenCvCamera camera;
@@ -52,9 +54,16 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
     double cy = 221.506;
 
     // UNITS ARE METERS
-    double tagsize = 0.166;
+    double tagsize = 0.13;
 
-    int ID_TAG_OF_INTEREST = 18; // Tag ID 18 from the 36h11 family
+    int framesWithoutDetection = 0;
+
+    int NUM_FRAMES_BEFORE_DECIMATION = 4;
+    int THRESHOLD_DISTANCE_HIGH_DECIMATION = 4;
+    int DECIMATION_HIGH = 3;
+    int DECIMATION_LOW = 1;
+
+    int ID_TAG_OF_INTEREST = 1;
 
     AprilTagDetection tagOfInterest = null;
 
@@ -87,29 +96,35 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
          * The INIT-loop:
          * This REPLACES waitForStart!
          */
+
         while (!isStarted() && !isStopRequested())
         {
+            telemetry.addData("Alpha", aprilTagDetectionPipeline.alpha);
+            telemetry.addData("Beta", aprilTagDetectionPipeline.beta);
+            telemetry.addData("Grey Max", aprilTagDetectionPipeline.greyMax);
+            telemetry.addData("Grey Min", aprilTagDetectionPipeline.greyMin);
+            telemetry.addLine();
+            telemetry.update();
+
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
 
             if(currentDetections.size() != 0)
             {
-                boolean tagFound = false;
+                framesWithoutDetection = 0;
+                tagOfInterest = currentDetections.get(0);
 
-                for(AprilTagDetection tag : currentDetections)
-                {
-                    if(tag.id == ID_TAG_OF_INTEREST)
-                    {
-                        tagOfInterest = tag;
-                        tagFound = true;
-                        break;
-                    }
-                }
+                if(tagOfInterest.pose.z < THRESHOLD_DISTANCE_HIGH_DECIMATION)
+                    aprilTagDetectionPipeline.setDecimation(DECIMATION_HIGH);
 
-                if(tagFound)
-                {
-                    telemetry.addLine("Tag is in sight!\n\nLocation data:");
-                    tagToTelemetry(tagOfInterest);
-                }
+                telemetry.addLine("Tag is in sight!\n\nLocation data:");
+                tagToTelemetry(tagOfInterest);
+                telemetry.update();
+            }
+            else {
+                framesWithoutDetection++;
+
+                if(framesWithoutDetection > NUM_FRAMES_BEFORE_DECIMATION)
+                    aprilTagDetectionPipeline.setDecimation(DECIMATION_LOW);
             }
 
             telemetry.update();

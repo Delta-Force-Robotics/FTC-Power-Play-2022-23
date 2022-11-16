@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.threads;
 
-import org.firstinspires.ftc.teamcode.Interfaces.IntakeInterface;
+import org.firstinspires.ftc.teamcode.Interfaces.ClawInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.TurretInterface;
@@ -9,13 +9,13 @@ import org.firstinspires.ftc.teamcode.Interfaces.TurretInterface;
  * This thread
  */
 public class ScoreThread extends Thread {
-    IntakeInterface intakeInterface;
+    ClawInterface clawInterface;
     IntakeSlideInterface intakeSlideInterface;
     SlideInterface slideInterface;
     TurretInterface turretInterface;
 
-    public ScoreThread(IntakeInterface intakeInterface, IntakeSlideInterface intakeSlideInterface, SlideInterface slideInterface, TurretInterface turretInterface) {
-        this.intakeInterface = intakeInterface;
+    public ScoreThread(ClawInterface clawInterface, IntakeSlideInterface intakeSlideInterface, SlideInterface slideInterface, TurretInterface turretInterface) {
+        this.clawInterface = clawInterface;
         this.intakeSlideInterface = intakeSlideInterface;
         this.slideInterface = slideInterface;
         this.turretInterface = turretInterface;
