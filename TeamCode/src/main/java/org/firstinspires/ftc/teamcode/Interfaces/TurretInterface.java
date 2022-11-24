@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Interfaces;
 
 public interface TurretInterface {
-   void rotateTurret(int rotateTicks);
+   void rotateTurretRobotCentric(int rotateTicks);
+   void rotateTurretFieldCentric(int rotateTicks);
+   int clipTicksToConstraints(int ticks);
 }

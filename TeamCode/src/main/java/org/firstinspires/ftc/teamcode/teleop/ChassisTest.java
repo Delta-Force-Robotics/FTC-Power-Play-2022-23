@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 
+import android.transition.Slide;
+
 import com.arcrobotics.ftclib.command.CommandOpMode;
 
 
@@ -15,9 +17,10 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.commands.IntakeCommand;
+import org.firstinspires.ftc.teamcode.commands.ScoreCommand;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
-import org.firstinspires.ftc.teamcode.threads.ScoreThread;
 import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import org.firstinspires.ftc.teamcode.commands.DriveCommand;
 import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
@@ -25,6 +28,8 @@ import org.firstinspires.ftc.teamcode.subsystems.IntakeSlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
+import org.firstinspires.ftc.teamcode.util.AxisDirection;
+import org.firstinspires.ftc.teamcode.util.BNO055IMUUtil;
 import org.openftc.apriltag.AprilTagDetection;
 
 @TeleOp(name="ChassisTest")
@@ -50,6 +55,9 @@ public class ChassisTest extends CommandOpMode {
     private DriveSubsystem driveSubsystem;
     private DriveCommand driveCommand;
 
+    private IntakeCommand intakeCommand;
+    private ScoreCommand scoreCommand;
+
     private TurretSubsystem turretSubsystem;
     private SlideSubsystem slideSubsystem;
     private IntakeSlideSubsystem intakeSlideSubsystem;
@@ -60,13 +68,14 @@ public class ChassisTest extends CommandOpMode {
    private SlideThread midJunctionThread;
    private SlideThread lowJunctionThread;
    private SlideThread highJunctionThread;
-   private ScoreThread scoreThread;
+  /// private ScoreThread scoreThread;
 
    private InstantCommand startPos;
    private InstantCommand extendedSlide;
 
    private InstantCommand openClaw;
    private InstantCommand closeClaw;
+   private InstantCommand toggleTurretTurnState;
 
    private AprilTagDetection aprilTagDetection;
     @Override
@@ -93,6 +102,7 @@ public class ChassisTest extends CommandOpMode {
 
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
+        BNO055IMUUtil.remapZAxis(imu, AxisDirection.POS_Y);
 
         slideServoL.setPosition(0);
         slideServoR.setPosition(0);
@@ -112,7 +122,7 @@ public class ChassisTest extends CommandOpMode {
         driver2 = new GamepadEx(gamepad2);
 
         driveSubsystem = new DriveSubsystem(leftFront, leftBack, rightFront, rightBack);
-        driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX);
+        driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX, imu);
 
         turretSubsystem = new TurretSubsystem(turretMotor, imu);
         slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight);
@@ -120,12 +130,13 @@ public class ChassisTest extends CommandOpMode {
         clawSubsystem = new ClawSubsystem(clawServoL, clawServoR);
 
         // Instantiate threads and instant commands.
-        grJunctionThread = new SlideThread(slideSubsystem::setLevel, clawSubsystem::useClaw, Constants.SLIDE_GR_JUNCTION);
-        lowJunctionThread = new SlideThread(slideSubsystem::setLevel, clawSubsystem::useClaw, Constants.SLIDE_LOW_JUNCTION);
-        midJunctionThread = new SlideThread(slideSubsystem::setLevel, clawSubsystem::useClaw, Constants.SLIDE_MID_JUNCTION);
-        highJunctionThread = new SlideThread(slideSubsystem::setLevel, clawSubsystem::useClaw, Constants.SLIDE_HIGH_JUNCTION);
+        grJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_GR_JUNCTION);
+        lowJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_LOW_JUNCTION);
+        midJunctionThread = new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_MID_JUNCTION);
+        highJunctionThread = new SlideThread(slideSubsystem::setLevel,  Constants.SLIDE_HIGH_JUNCTION);
 
-        scoreThread = new ScoreThread(clawSubsystem::useClaw, intakeSlideSubsystem::slideIntake, slideSubsystem::setLevel, turretSubsystem::rotateTurret);
+        intakeCommand = new IntakeCommand(clawSubsystem, intakeSlideSubsystem, new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_INTERMEDIARY));
+        scoreCommand = new ScoreCommand(clawSubsystem, intakeSlideSubsystem, new SlideThread(slideSubsystem::setLevel, Constants.SLIDE_INTAKE));
 
         startPos = new InstantCommand(() -> {
             intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_INIT_POSITION);
@@ -143,6 +154,16 @@ public class ChassisTest extends CommandOpMode {
             clawSubsystem.useClaw(Constants.CLOSE_CLAW);
         });
 
+        toggleTurretTurnState = new InstantCommand(() -> {
+            if(Constants.turretTurnState == Constants.TurretTurnState.FIELD_CENTRIC) {
+                Constants.turretTurnState = Constants.TurretTurnState.ROBOT_CENTRIC;
+            } else {
+                Constants.turretTurnState = Constants.TurretTurnState.FIELD_CENTRIC;
+            }
+
+        });
+
+
         // Assign commands and threads to buttons.
         Button turretRotateButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> turretTurn10.start());
         Button slideGrJunctionButton = new GamepadButton(driver2, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.run());
@@ -153,6 +174,10 @@ public class ChassisTest extends CommandOpMode {
         Button extendedSlideButton = new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(extendedSlide);
         Button openClawButton = new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(openClaw);
         Button closeClawButton = new GamepadButton(driver1, GamepadKeys.Button.Y).whenPressed(closeClaw);
+        Button TurretStateButton = new GamepadButton(driver1, GamepadKeys.Button.RIGHT_BUMPER).whenPressed(toggleTurretTurnState);
+        Button intakeCommandButton = new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(intakeCommand);
+        Button scoreCommandButton = new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(scoreCommand);
+
 
 
         register(driveSubsystem, turretSubsystem, intakeSlideSubsystem, clawSubsystem);

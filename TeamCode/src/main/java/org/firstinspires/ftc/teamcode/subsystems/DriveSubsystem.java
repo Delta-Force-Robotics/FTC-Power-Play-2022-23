@@ -27,8 +27,9 @@ public class DriveSubsystem extends SubsystemBase {
      * @param str the commanded strafe movement
      * @param fwd the commanded forward movement
      * @param rot the commanded rotation movement
+     * @param gyro the IMU gyro angle
      */
-    public void drive(double str, double fwd, double rot) {
-        mecanumDrive.driveRobotCentric(-str, -fwd, -rot);
+    public void drive(double str, double fwd, double rot, double gyro) {
+        mecanumDrive.driveFieldCentric(-str, -fwd, -rot, gyro);
     }
 }

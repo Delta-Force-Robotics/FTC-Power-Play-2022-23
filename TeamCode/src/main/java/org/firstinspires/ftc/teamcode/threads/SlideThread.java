@@ -17,23 +17,15 @@ import org.firstinspires.ftc.teamcode.constants.Constants;
 
 public class SlideThread extends Thread {
     SlideInterface slideInterface;
-    ClawInterface clawInterface;
     int slideLevel;
 
-    public SlideThread(SlideInterface slideInterface, ClawInterface clawInterface, int slideLevel) {
-        this.clawInterface = clawInterface;
+    public SlideThread(SlideInterface slideInterface, int slideLevel) {
         this.slideInterface = slideInterface;
         this.slideLevel = slideLevel;
     }
 
     @Override
     public void run() {
-        clawInterface.useClaw(Constants.CLOSE_CLAW);
-        try {
-            sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         slideInterface.setLevel(slideLevel);
     }
 }
