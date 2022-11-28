@@ -150,6 +150,8 @@ public class ChassisTest extends CommandOpMode {
         autoTurretTurnThread = new AutoTurretTurnThread(turretSubsystem, imuChassis);
         turretTurnThread = new TurretTurnThread(turretSubsystem, 0);
 
+        autoTurretTurnThread.setDaemon(true);
+
         grJunctionThread =      new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_GR_JUNCTION);
         lowJunctionThread =     new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_LOW_JUNCTION);
         midJunctionThread =     new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_MID_JUNCTION);
@@ -174,12 +176,10 @@ public class ChassisTest extends CommandOpMode {
                 turretTurnThread.turnAngle = ticks;
                 turretTurnThread.start();
 
-                telemetry.addData("TurretRotation", turretMotor.getCurrentPosition());
-                telemetry.update();
             } else {
                 autoTurretTurnThread.turnAngle = ticks;
                 if(!autoTurretTurnThread.isAlive()) {
-                    autoTurretTurnThread.start();
+                    autoTurretTurnThread.run();
                 }
 
                 //telemetry.addData("TurretRotation", okif1);

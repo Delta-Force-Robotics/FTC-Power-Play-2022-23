@@ -41,6 +41,7 @@ public class TelemetryDefaultCommand extends CommandBase {
     public void execute() {
         Orientation angles1 = chassisIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
+        telemetry.addData("telemetrie",Constants.turretTurnState);
         telemetry.addData("Gyroscope 1 Z ", angles1.firstAngle);
         telemetry.addData("Gyroscope 1 Y ", angles1.secondAngle);
         telemetry.addData("Gyroscope 1 X ", angles1.thirdAngle);

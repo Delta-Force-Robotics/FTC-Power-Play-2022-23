@@ -33,7 +33,7 @@ public class AutoTurretTurnThread extends Thread{
         }
 
 
-        turretSubsystem.turretMotor.setPositionCoefficient(Constants.TURRET_P);
+        turretSubsystem.turretMotor.setPositionCoefficient(0.05);
 
         // the turret can't turn more than 90 degrees to the left or 180 degrees to the right as it is restricted by the cable chain.
         turretSubsystem.turretMotor.setTargetPosition((int) turretSubsystem.rotateTurretPresetPosition(turnAngle, (int) ticksOffset));
@@ -41,9 +41,15 @@ public class AutoTurretTurnThread extends Thread{
         turretSubsystem.turretMotor.setPositionTolerance(Constants.TURRET_ALLOWED_ERROR); // allowed maximum error
 
         // perform the control loop
-        while (!turretSubsystem.turretMotor.atTargetPosition() && (Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) && !isInterrupted()) {
-            //turretMotor.setTargetPosition(clipTicksToConstraints(rotateTicks.getAsInt() - (int)ticksOffset));
+        while ( (Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) && !isInterrupted()) {
+            turretSubsystem.turretMotor.setTargetPosition((int) turretSubsystem.rotateTurretPresetPosition(turnAngle, (int) ticksOffset));
             turretSubsystem.turretMotor.set(1);
+
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         turretSubsystem.turretMotor.stopMotor(); // stop the motor
