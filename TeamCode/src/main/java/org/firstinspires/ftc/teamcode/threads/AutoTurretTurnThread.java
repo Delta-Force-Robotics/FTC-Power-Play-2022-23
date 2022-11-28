@@ -27,7 +27,7 @@ public class AutoTurretTurnThread extends Thread{
         turretSubsystem.turretMotor.setRunMode(Motor.RunMode.PositionControl);
         double ticksOffset = 0.0;
 
-        if(Constants.turretTurnState == Constants.TurretTurnState.FIELD_CENTRIC) {
+        if (Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) {
             Orientation angles = turretSubsystem.chassisImu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
             ticksOffset = turretSubsystem.calculateOffset(angles); // used for field centric turret.
         }
@@ -36,15 +36,18 @@ public class AutoTurretTurnThread extends Thread{
         turretSubsystem.turretMotor.setPositionCoefficient(Constants.TURRET_P);
 
         // the turret can't turn more than 90 degrees to the left or 180 degrees to the right as it is restricted by the cable chain.
-        turretSubsystem.turretMotor.setTargetPosition((int)turretSubsystem.rotateTurretPresetPosition(turnAngle, (int)ticksOffset));
+        turretSubsystem.turretMotor.setTargetPosition((int) turretSubsystem.rotateTurretPresetPosition(turnAngle, (int) ticksOffset));
 
         turretSubsystem.turretMotor.setPositionTolerance(Constants.TURRET_ALLOWED_ERROR); // allowed maximum error
 
         // perform the control loop
-        while ((!turretSubsystem.turretMotor.atTargetPosition() || Constants.inputState == Constants.InputState.MANUAL_CONTROL) && !Constants.ROBOT_STOPPED && !isInterrupted()) {
+        while (!turretSubsystem.turretMotor.atTargetPosition() && (Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) && !isInterrupted()) {
             //turretMotor.setTargetPosition(clipTicksToConstraints(rotateTicks.getAsInt() - (int)ticksOffset));
             turretSubsystem.turretMotor.set(1);
         }
+
         turretSubsystem.turretMotor.stopMotor(); // stop the motor
     }
-}
+
+
+    }

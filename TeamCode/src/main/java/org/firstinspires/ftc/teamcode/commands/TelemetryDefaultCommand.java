@@ -25,7 +25,7 @@ public class TelemetryDefaultCommand extends CommandBase {
     private BNO055IMU chassisIMU;
     private Telemetry telemetry;
 
-    public TelemetryDefaultCommand(TurretSubsystem turretSubsystem, SlideSubsystem slideSubsystem, IntakeSlideSubsystem intakeSlideSubsystem, DriveSubsystem driveSubsystem, ClawSubsystem clawSubsystem, BNO055IMU turretIMU, BNO055IMU chassisIMU, Telemetry telemetry) {
+    public TelemetryDefaultCommand(TurretSubsystem turretSubsystem, SlideSubsystem slideSubsystem, IntakeSlideSubsystem intakeSlideSubsystem, DriveSubsystem driveSubsystem, ClawSubsystem clawSubsystem, BNO055IMU chassisIMU, Telemetry telemetry) {
         this.turretSubsystem = turretSubsystem;
         this.slideSubsystem = slideSubsystem;
         this.intakeSlideSubsystem = intakeSlideSubsystem;

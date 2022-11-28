@@ -14,6 +14,7 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.commands.IntakeCommand;
@@ -49,7 +50,6 @@ public class ChassisTest extends CommandOpMode {
     private Servo clawServoL;
     private Servo clawServoR;
 
-    private BNO055IMU imuTurret;    // Expansion Hub IMU
     private BNO055IMU imuChassis;   // Control Hub IMU
 
     private GamepadEx driver1;
@@ -115,10 +115,8 @@ public class ChassisTest extends CommandOpMode {
         parameters.loggingEnabled      = true;
         parameters.loggingTag          = "IMU";
 
-        imuTurret = hardwareMap.get(BNO055IMU.class, "imu");
-        imuChassis = hardwareMap.get(BNO055IMU.class, "imu2");
+        imuChassis = hardwareMap.get(BNO055IMU.class, "imu");
         imuChassis.initialize(parameters);
-        imuTurret.initialize(parameters);
 
         linkageServoL.setPosition(0);
         linkageServoR.setPosition(0);
@@ -142,13 +140,14 @@ public class ChassisTest extends CommandOpMode {
         driveSubsystem = new DriveSubsystem(leftFront, leftBack, rightFront, rightBack);
         driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX, imuChassis);
 
-        turretSubsystem = new TurretSubsystem(turretMotor, imuTurret);
+        turretSubsystem = new TurretSubsystem(turretMotor, imuChassis, telemetry);
+
         slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, telemetry);
         intakeSlideSubsystem = new IntakeSlideSubsystem(linkageServoL, linkageServoR);
         clawSubsystem = new ClawSubsystem(clawServoL, clawServoR);
 
         // Instantiate threads and instant commands.
-        autoTurretTurnThread = new AutoTurretTurnThread(turretSubsystem, imuTurret);
+        autoTurretTurnThread = new AutoTurretTurnThread(turretSubsystem, imuChassis);
         turretTurnThread = new TurretTurnThread(turretSubsystem, 0);
 
         grJunctionThread =      new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_GR_JUNCTION);
@@ -159,7 +158,7 @@ public class ChassisTest extends CommandOpMode {
         intakeCommand = new IntakeCommand(clawSubsystem, new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_INTERMEDIARY));
         scoreCommand = new ScoreCommand(clawSubsystem, intakeSlideSubsystem, new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_INTAKE), new TurretTurnThread(turretSubsystem, 0));
 
-        telemetryDefaultCommand = new TelemetryDefaultCommand(turretSubsystem, slideSubsystem, intakeSlideSubsystem, driveSubsystem, clawSubsystem, imuTurret, imuChassis, telemetry);
+        telemetryDefaultCommand = new TelemetryDefaultCommand(turretSubsystem, slideSubsystem, intakeSlideSubsystem, driveSubsystem, clawSubsystem, imuChassis, telemetry);
 
         intakeSlideInitPosCommand = new InstantCommand(() -> {
             intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_INIT_POSITION);
@@ -174,11 +173,17 @@ public class ChassisTest extends CommandOpMode {
                 turretTurnThread.interrupt();
                 turretTurnThread.turnAngle = ticks;
                 turretTurnThread.start();
+
+                telemetry.addData("TurretRotation", turretMotor.getCurrentPosition());
+                telemetry.update();
             } else {
                 autoTurretTurnThread.turnAngle = ticks;
                 if(!autoTurretTurnThread.isAlive()) {
                     autoTurretTurnThread.start();
                 }
+
+                //telemetry.addData("TurretRotation", okif1);
+               // telemetry.update();
             }
         };
 
@@ -217,6 +222,7 @@ public class ChassisTest extends CommandOpMode {
         register(driveSubsystem, turretSubsystem, intakeSlideSubsystem, clawSubsystem);
         driveSubsystem.setDefaultCommand(driveCommand);
         intakeSlideSubsystem.setDefaultCommand(telemetryDefaultCommand);
+
     }
 
     @Override

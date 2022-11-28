@@ -1,9 +1,13 @@
 package org.firstinspires.ftc.teamcode.threads;
 
+import com.arcrobotics.ftclib.util.Timing;
+
 import org.firstinspires.ftc.teamcode.Interfaces.ClawInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
 import org.firstinspires.ftc.teamcode.constants.Constants;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * This thread actuates the slide motors to a given level (in ticks). <br><br>
@@ -19,6 +23,7 @@ public class SlideThread extends Thread {
     IntakeSlideInterface intakeSlideInterface;
     ClawInterface clawInterface;
     int slideLevel;
+    Timing.Timer timer;
 
     public SlideThread(SlideInterface slideInterface, IntakeSlideInterface intakeSlideInterface, ClawInterface clawInterface, int slideLevel) {
         this.slideInterface = slideInterface;
@@ -30,12 +35,12 @@ public class SlideThread extends Thread {
     @Override
     public void run() {
         clawInterface.useClaw(Constants.CLOSE_CLAW);
-
-        try {
-            sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        timer = new Timing.Timer(500, TimeUnit.MILLISECONDS);
+        timer.start();
+        while(!timer.done()) {
+            // Sleep
         }
+        timer.pause();
 
         intakeSlideInterface.slideIntake(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
         slideInterface.setLevel(slideLevel);

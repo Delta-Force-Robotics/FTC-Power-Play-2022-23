@@ -8,10 +8,13 @@ import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSlideSubsystem;
 import org.firstinspires.ftc.teamcode.threads.SlideThread;
 
+import java.util.concurrent.TimeUnit;
+
 public class IntakeCommand extends CommandBase {
 
     ClawSubsystem clawSubsystem;
     SlideThread slideThread;
+    Timing.Timer timer;
 
     public IntakeCommand(ClawSubsystem clawSubsystem, SlideThread slideThread) {
         this.clawSubsystem = clawSubsystem;
@@ -22,10 +25,14 @@ public class IntakeCommand extends CommandBase {
     public void execute() {
         clawSubsystem.useClaw(Constants.CLOSE_CLAW);
 
-        Timing.Timer timer = new Timing.Timer(500);
-        while(timer.elapsedTime() != 500);
+        timer = new Timing.Timer(1000, TimeUnit.MILLISECONDS);
+        timer.start();
+        while (!timer.done()) {
+            // Sleep
+        }
+        timer.pause();
 
-        if(!slideThread.isAlive()) {
+        if (!slideThread.isAlive()) {
             slideThread.run();
         }
     }

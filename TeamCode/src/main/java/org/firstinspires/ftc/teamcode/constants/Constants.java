@@ -49,7 +49,7 @@ public class Constants {
     public static final int TURRET_TURN_90 = 567;
     public static final int TURRET_TURN_180 = -1134;
     public static final int TURRET_CONSTRAINT_MAX = 1134;
-    public static final int TURRET_CONSTRAINT_MIN = -1701;
+    public static final int TURRET_CONSTRAINT_MIN = -1424;
     public static final int TURRET_FULL_ROTATION = 2268;
 
     public static double OP_MODE_START_GYRO_ZERO = 0;
@@ -64,7 +64,7 @@ public class Constants {
 
     //Claw Subsystem
     public static final double OPEN_CLAW = 0.1;
-    public static final double CLOSE_CLAW = 0.65;
+    public static final double CLOSE_CLAW = 0.70;
 
     public static final int APRIL_TAG_PARK_ZONE_1 = 131;
     public static final int APRIL_TAG_PARK_ZONE_2 = 563;
