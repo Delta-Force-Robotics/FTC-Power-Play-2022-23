@@ -16,20 +16,20 @@ public class MeepMeepTesting {
                 .setConstraints(60, 60, Math.toRadians(360), Math.toRadians(360), 14)
                 .followTrajectorySequence(drive ->
                         // TRAJECTORY SEQUENCE RED BOTTOM
-                        /*drive.trajectorySequenceBuilder(new Pose2d(-35.5, -60, Math.toRadians(90)))
+                        drive.trajectorySequenceBuilder(new Pose2d(-35.5, -60, Math.toRadians(90)))
                                 .lineToLinearHeading(new Pose2d(-35.5, -11.5, Math.toRadians(180)))
                                 .lineToConstantHeading(new Vector2d(35.5, -11.5)) // score & parking spot 2
-                                .lineToConstantHeading(new Vector2d(11.5, -11.5)) //parking spot 1
+                                //.lineToConstantHeading(new Vector2d(11.5, -11.5)) //parking spot 1
                                 //.lineToConstantHeading(new Vector2d(57.5, -11.5)) //parking spot 3
-                                .build()*/
+                                .build()
 
                         // TRAJECTORY SEQUENCE RED TOP
-                        drive.trajectorySequenceBuilder(new Pose2d(35.5, -60, Math.toRadians(90)))
+                       /*drive.trajectorySequenceBuilder(new Pose2d(35.5, -60, Math.toRadians(90)))
                                 .lineToLinearHeading(new Pose2d(35.5, -11.5, Math.toRadians(180)))
                                 .lineToConstantHeading(new Vector2d(-35.5, -11.5)) // parking position 2
                                 .lineToConstantHeading(new Vector2d(-11.5, -11.5)) // parking position 3
                                 .lineToConstantHeading(new Vector2d(-57.5, -11.5)) // parking position 1
-                                .build()
+                                .build()*/
 
                         // TRAJECTORY SEQUENCE BLUE BOTTOM
                         /*drive.trajectorySequenceBuilder(new Pose2d(-35.5, 60, Math.toRadians(90)))
@@ -40,11 +40,11 @@ public class MeepMeepTesting {
                                 .build()*/
 
                         // TRAJECTORY SEQUENCE BLUE TOP
-                        /*drive.trajectorySequenceBuilder(new Pose2d(35.5, 60, Math.toRadians(90)))
+                       /* drive.trajectorySequenceBuilder(new Pose2d(35.5, 60, Math.toRadians(90)))
                                 .lineToLinearHeading(new Pose2d(35.5, 11.5, Math.toRadians(180)))
                                 .lineToConstantHeading(new Vector2d(-35.5, 11.5)) // parking position 2
-                                .lineToConstantHeading(new Vector2d(-11.5, 11.5)) // parking position 3
-                                .lineToConstantHeading(new Vector2d(-57.5, 11.5)) // parking position 1
+                               // .lineToConstantHeading(new Vector2d(-11.5, 11.5)) // parking position 3
+                               // .lineToConstantHeading(new Vector2d(-57.5, 11.5)) // parking position 1
                                 .build()*/
 
                         // test lmao

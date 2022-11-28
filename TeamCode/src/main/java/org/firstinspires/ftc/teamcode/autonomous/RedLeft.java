@@ -23,7 +23,6 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.vision.AprilTagDetectionPipeline;
@@ -31,17 +30,14 @@ import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 @Autonomous
-public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
+public class RedLeft extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
-
     static final double FEET_PER_METER = 3.28084;
 
     // Lens intrinsics
@@ -63,7 +59,7 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
     int DECIMATION_HIGH = 3;
     int DECIMATION_LOW = 1;
 
-    int ID_TAG_OF_INTEREST = 1;
+    int tagID;
 
     AprilTagDetection tagOfInterest = null;
 
@@ -99,19 +95,13 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
 
         while (!isStarted() && !isStopRequested())
         {
-            telemetry.addData("Alpha", aprilTagDetectionPipeline.alpha);
-            telemetry.addData("Beta", aprilTagDetectionPipeline.beta);
-            telemetry.addData("Grey Max", aprilTagDetectionPipeline.greyMax);
-            telemetry.addData("Grey Min", aprilTagDetectionPipeline.greyMin);
-            telemetry.addLine();
-            telemetry.update();
-
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
 
             if(currentDetections.size() != 0)
             {
                 framesWithoutDetection = 0;
                 tagOfInterest = currentDetections.get(0);
+                tagID = tagOfInterest.id;
 
                 if(tagOfInterest.pose.z < THRESHOLD_DISTANCE_HIGH_DECIMATION)
                     aprilTagDetectionPipeline.setDecimation(DECIMATION_HIGH);
@@ -132,17 +122,21 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
         }
 
         /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
-        while (opModeIsActive()) {sleep(20);}
+        while (opModeIsActive()) {
+
+        }
     }
 
     void tagToTelemetry(AprilTagDetection detection)
     {
-        telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
+        /*telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
         telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
         telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
         telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
         telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
         telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
-        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
+        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));*/
+
+
     }
 }

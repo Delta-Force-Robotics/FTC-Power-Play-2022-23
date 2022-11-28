@@ -3,15 +3,19 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
+import org.firstinspires.ftc.teamcode.constants.Constants;
 
 public class SlideSubsystem extends SubsystemBase implements SlideInterface {
-    private Motor slideMotor1;
-    private Motor slideMotor2;
+    public Motor slideMotorLeft;
+    public Motor slideMotorRight;
+    private Telemetry telemetry;
 
-    public SlideSubsystem(Motor slideMotor1, Motor slideMotor2) {
-        this.slideMotor1 = slideMotor1;
-        this.slideMotor2 = slideMotor2;
+    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry) {
+        this.slideMotorLeft = slideMotorLeft;
+        this.slideMotorRight = slideMotorRight;
+        this.telemetry = telemetry;
     }
 
     /**
@@ -20,34 +24,35 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
      */
     @Override
     public void setLevel(int level) {
-        slideMotor1.setRunMode(Motor.RunMode.PositionControl);
-        slideMotor2.setRunMode(Motor.RunMode.PositionControl);
+        slideMotorLeft.setRunMode(Motor.RunMode.PositionControl);
+        slideMotorRight.setRunMode(Motor.RunMode.PositionControl);
 
         // set and get the position coefficient
-        slideMotor1.setPositionCoefficient(0.05);
-        slideMotor2.setPositionCoefficient(0.05);
-        double kP1 = slideMotor1.getPositionCoefficient();
-        double kP2 = slideMotor2.getPositionCoefficient();
+        slideMotorLeft.setPositionCoefficient(Constants.SLIDE_P);
+        slideMotorRight.setPositionCoefficient(Constants.SLIDE_P);
 
         // set the target position
-        slideMotor1.setTargetPosition(level);      // an integer representing
-        slideMotor2.setTargetPosition(level);      // an integer representing
-        // desired tick count
-
-        slideMotor1.set(0);
-        slideMotor2.set(0);
+        slideMotorLeft.setTargetPosition(level);      // an integer representing
+        slideMotorRight.setTargetPosition(level);      // desired tick count
 
         // set the tolerance
-        slideMotor1.setPositionTolerance(13.6);   // allowed maximum error
-        slideMotor2.setPositionTolerance(13.6);   // allowed maximum error
+        slideMotorLeft.setPositionTolerance(Constants.SLIDE_ALLOWED_ERROR);   // allowed maximum error
+        slideMotorRight.setPositionTolerance(Constants.SLIDE_ALLOWED_ERROR);   // allowed maximum error
 
         // perform the control loop
-        while (!slideMotor1.atTargetPosition()) {
-            slideMotor1.set(0.50);
-            slideMotor2.set(0.50);
+        while (!slideMotorLeft.atTargetPosition() && !Constants.ROBOT_STOPPED) {
+            slideMotorLeft.set(1);
+            slideMotorRight.set(1);
+
+            telemetry.addData("2", 2);
+            telemetry.addData("Left Motor Ticks", slideMotorLeft.getCurrentPosition());
+            telemetry.addData("Right Motor Ticks", slideMotorRight.getCurrentPosition());
+            telemetry.update();
         }
 
-        slideMotor1.stopMotor(); // stop the motor
-        slideMotor2.stopMotor(); // stop the motor
+        slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
+        slideMotorRight.setRunMode(Motor.RunMode.RawPower);
+        slideMotorLeft.set(-0.15);
+        slideMotorRight.set(-0.15);
     }
 }

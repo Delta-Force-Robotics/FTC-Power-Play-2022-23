@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.commands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
+import com.arcrobotics.ftclib.util.Timing;
 
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
@@ -10,26 +11,29 @@ import org.firstinspires.ftc.teamcode.threads.SlideThread;
 public class IntakeCommand extends CommandBase {
 
     ClawSubsystem clawSubsystem;
-    IntakeSlideSubsystem intakeSlideSubsystem;
     SlideThread slideThread;
 
-    public IntakeCommand(ClawSubsystem clawSubsystem, IntakeSlideSubsystem intakeSlideSubsystem, SlideThread slideThread) {
-
+    public IntakeCommand(ClawSubsystem clawSubsystem, SlideThread slideThread) {
         this.clawSubsystem = clawSubsystem;
-        this.intakeSlideSubsystem = intakeSlideSubsystem;
         this.slideThread = slideThread;
     }
 
+    @Override
     public void execute() {
-
         clawSubsystem.useClaw(Constants.CLOSE_CLAW);
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
-        slideThread.run();
-        intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
+        Timing.Timer timer = new Timing.Timer(500);
+        while(timer.elapsedTime() != 500);
+
+        if(!slideThread.isAlive()) {
+            slideThread.run();
+        }
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        if(interrupted) {
+            slideThread.interrupt();
+        }
     }
 }

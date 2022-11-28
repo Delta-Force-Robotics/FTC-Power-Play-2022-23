@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.Interfaces;
 
+import java.util.function.IntSupplier;
+
 public interface TurretInterface {
-   void rotateTurretRobotCentric(int rotateTicks);
-   void rotateTurretFieldCentric(int rotateTicks);
-   int clipTicksToConstraints(int ticks);
+   void rotateTurret(IntSupplier rotateTicks);
 }

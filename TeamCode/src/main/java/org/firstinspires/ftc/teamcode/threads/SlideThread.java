@@ -1,8 +1,7 @@
 package org.firstinspires.ftc.teamcode.threads;
 
-import static org.firstinspires.ftc.teamcode.constants.Constants.CLOSE_CLAW;
-
 import org.firstinspires.ftc.teamcode.Interfaces.ClawInterface;
+import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 
@@ -17,15 +16,28 @@ import org.firstinspires.ftc.teamcode.constants.Constants;
 
 public class SlideThread extends Thread {
     SlideInterface slideInterface;
+    IntakeSlideInterface intakeSlideInterface;
+    ClawInterface clawInterface;
     int slideLevel;
 
-    public SlideThread(SlideInterface slideInterface, int slideLevel) {
+    public SlideThread(SlideInterface slideInterface, IntakeSlideInterface intakeSlideInterface, ClawInterface clawInterface, int slideLevel) {
         this.slideInterface = slideInterface;
+        this.intakeSlideInterface = intakeSlideInterface;
+        this.clawInterface = clawInterface;
         this.slideLevel = slideLevel;
     }
 
     @Override
     public void run() {
+        clawInterface.useClaw(Constants.CLOSE_CLAW);
+
+        try {
+            sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        intakeSlideInterface.slideIntake(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
         slideInterface.setLevel(slideLevel);
     }
 }
