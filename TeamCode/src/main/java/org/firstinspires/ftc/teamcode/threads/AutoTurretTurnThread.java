@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.threads;
 
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 
@@ -13,6 +14,7 @@ import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 public class AutoTurretTurnThread extends Thread{
     public int turnAngle;
     private TurretSubsystem turretSubsystem;
+    private PIDFController pidfController;
     private BNO055IMU imu;
 
     public AutoTurretTurnThread(TurretSubsystem turretSubsystem, BNO055IMU imu) {
@@ -23,17 +25,19 @@ public class AutoTurretTurnThread extends Thread{
 
     @Override
     public void run() {
-        turretSubsystem.turretMotor.setRunMode(Motor.RunMode.PositionControl);
+        turretSubsystem.turretMotor.setRunMode(Motor.RunMode.RawPower);
+        pidfController = new PIDFController(Constants.TURRET_P, Constants.TURRET_I, Constants.TURRET_D, Constants.TURRED_F);
+
         double ticksOffset = 0.0;
 
-        if (Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) {
-            Orientation angles = turretSubsystem.chassisImu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        if(Constants.turretTurnState == Constants.TurretTurnState.FIELD_CENTRIC) {
+            Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
             ticksOffset = turretSubsystem.calculateOffset(angles); // used for field centric turret.
         }
 
-        turretSubsystem.turretMotor.setPositionCoefficient(0.005);
-        turretSubsystem.turretMotor.setTargetPosition((int) turretSubsystem.shortestPathPossible(turnAngle, (int) ticksOffset));
-        turretSubsystem.turretMotor.setPositionTolerance(Constants.TURRET_ALLOWED_ERROR); // allowed maximum error
+        // the turret can't turn more than 90 degrees to the left or 180 degrees to the right as it is restricted by the cable chain.
+        pidfController.setSetPoint((int) turretSubsystem.shortestPathPossible(turnAngle, (int)ticksOffset));
+        pidfController.setTolerance(Constants.TURRET_ALLOWED_ERROR);
 
         // perform the control loop
         while ((Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) && !isInterrupted()) {
@@ -41,16 +45,19 @@ public class AutoTurretTurnThread extends Thread{
             ticksOffset = turretSubsystem.calculateOffset(angles);
 
             int targetPosition = (int) turretSubsystem.shortestPathPossible(turnAngle, (int) ticksOffset);
-            turretSubsystem.turretMotor.setTargetPosition(targetPosition);
-            turretSubsystem.turretMotor.set(1);
+            pidfController.setSetPoint(targetPosition);
 
+            turretSubsystem.turretMotor.set(
+                    pidfController.calculate(
+                            turretSubsystem.turretMotor.getCurrentPosition()
+                    )
+            );
+
+            Thread.yield();
         }
 
         turretSubsystem.turretMotor.stopMotor(); // stop the motor
 
-        Thread.yield();
 
     }
-
-
-    }
+}

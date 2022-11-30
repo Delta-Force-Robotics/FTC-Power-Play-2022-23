@@ -35,14 +35,14 @@ public class SlideThread extends Thread {
     @Override
     public void run() {
         clawInterface.useClaw(Constants.CLOSE_CLAW);
-        timer = new Timing.Timer(500, TimeUnit.MILLISECONDS);
+        timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
         timer.start();
         while(!timer.done()) {
-            // Sleep
+            Thread.yield();
         }
         timer.pause();
 
-        intakeSlideInterface.slideIntake(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
+        intakeSlideInterface.setExtensionPosition(Constants.INTAKE_SLIDE_INTERMEDIARY_POSITION);
         slideInterface.setLevel(slideLevel);
     }
 }

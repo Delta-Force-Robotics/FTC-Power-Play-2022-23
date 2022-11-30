@@ -6,12 +6,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;
 
-public class IntakeSlideSubsystem extends SubsystemBase implements IntakeSlideInterface {
+public class LinkageSubsystem extends SubsystemBase implements IntakeSlideInterface {
 
     private Servo slideServoL;
     private Servo slideServoR;
 
-    public IntakeSlideSubsystem(Servo slideServoL, Servo slideServoR) {
+    public LinkageSubsystem(Servo slideServoL, Servo slideServoR) {
         this.slideServoL = slideServoL;
         this.slideServoR = slideServoR;
     }
@@ -20,9 +20,13 @@ public class IntakeSlideSubsystem extends SubsystemBase implements IntakeSlideIn
      * Sets the servos to the intake position
      * @param slideIntakePosition gets to desired position
      */
-    public void slideIntake(double slideIntakePosition) {
+    public void setExtensionPosition(double slideIntakePosition) {
         slideServoL.setPosition(slideIntakePosition);
         slideServoR.setPosition(slideIntakePosition);
+    }
+
+    public double getExtensionPosition() {
+        return slideServoL.getPosition();
     }
 }
 

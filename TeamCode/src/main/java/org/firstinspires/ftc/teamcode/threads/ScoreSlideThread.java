@@ -15,8 +15,9 @@ public class ScoreSlideThread extends  Thread{
         this.slideInterface=slideInterface;
         this.slideLevelForScore=slideLevelForScore;
     }
-@Override
+
+    @Override
     public void run(){
         slideInterface.setLevel(slideLevelForScore);
-}
+    }
 }

@@ -1,43 +1,40 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
-
 import com.arcrobotics.ftclib.command.CommandOpMode;
-
-
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.button.Button;
 import com.arcrobotics.ftclib.command.button.GamepadButton;
+import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
-import com.arcrobotics.ftclib.gamepad.GamepadEx;
-
+import com.arcrobotics.ftclib.util.Timing;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.commands.DriveCommand;
 import org.firstinspires.ftc.teamcode.commands.IntakeCommand;
-import org.firstinspires.ftc.teamcode.commands.ScoreCommand;
 import org.firstinspires.ftc.teamcode.commands.TelemetryDefaultCommand;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
-import org.firstinspires.ftc.teamcode.threads.AutoTurretTurnThread;
-import org.firstinspires.ftc.teamcode.threads.ScoreSlideThread;
-import org.firstinspires.ftc.teamcode.threads.SlideThread;
-import org.firstinspires.ftc.teamcode.commands.DriveCommand;
-import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.IntakeSlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.LinkageSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
+import org.firstinspires.ftc.teamcode.threads.AutoTurretTurnThread;
+import org.firstinspires.ftc.teamcode.threads.ScoreSlideThread;
+import org.firstinspires.ftc.teamcode.threads.ScoreThread;
+import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import org.firstinspires.ftc.teamcode.threads.TurretTurnThread;
 import org.openftc.apriltag.AprilTagDetection;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 
-@TeleOp(name="ChassisTest")
-public class ChassisTest extends CommandOpMode {
+@TeleOp(name="TeleOpMainReset")
+public class TeleOpMainReset extends CommandOpMode {
     private Motor leftFront;
     private Motor leftBack;
     private Motor rightFront;
@@ -60,13 +57,13 @@ public class ChassisTest extends CommandOpMode {
     private DriveCommand driveCommand;
 
     private IntakeCommand intakeCommand;
-    private ScoreCommand scoreCommand;
+    private ScoreThread scoreThread;
 
     private TelemetryDefaultCommand telemetryDefaultCommand;
 
     private TurretSubsystem turretSubsystem;
     private SlideSubsystem slideSubsystem;
-    private IntakeSlideSubsystem intakeSlideSubsystem;
+    private LinkageSubsystem linkageSubsystem;
     private ClawSubsystem clawSubsystem;
 
     private Thread turretTurn10;
@@ -83,22 +80,28 @@ public class ChassisTest extends CommandOpMode {
     private InstantCommand openClaw;
     private InstantCommand closeClaw;
     private InstantCommand toggleTurretTurnState;
+    private InstantCommand toggleLinkageExtension;
 
     private IntConsumer setTurretAngle;
 
     private AprilTagDetection aprilTagDetection;
+    private Timing.Timer timer;
 
     @Override
     public void initialize() {
         Constants.ROBOT_STOPPED = false;
 
-        leftFront = new Motor(hardwareMap, HardwareConstants.ID_LEFT_FRONT_MOTOR);
-        leftBack = new Motor(hardwareMap, HardwareConstants.ID_LEFT_BACK_MOTOR);
-        rightFront = new Motor(hardwareMap, HardwareConstants.ID_RIGHT_FRONT_MOTOR);
-        rightBack = new Motor(hardwareMap, HardwareConstants.ID_RIGHT_BACK_MOTOR);
-        turretMotor = new Motor(hardwareMap, HardwareConstants.ID_TURRET_MOTOR);
-        slideMotorLeft = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
+        leftFront       = new Motor(hardwareMap, HardwareConstants.ID_LEFT_FRONT_MOTOR);
+        leftBack        = new Motor(hardwareMap, HardwareConstants.ID_LEFT_BACK_MOTOR);
+        rightFront      = new Motor(hardwareMap, HardwareConstants.ID_RIGHT_FRONT_MOTOR);
+        rightBack       = new Motor(hardwareMap, HardwareConstants.ID_RIGHT_BACK_MOTOR);
+        turretMotor     = new Motor(hardwareMap, HardwareConstants.ID_TURRET_MOTOR);
+        slideMotorLeft  = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
         slideMotorRight = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_RIGHT);
+
+        slideMotorLeft.resetEncoder();
+        slideMotorRight.resetEncoder();
+        turretMotor.resetEncoder();
 
         linkageServoL = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
         linkageServoR = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_RIGHT);
@@ -138,53 +141,47 @@ public class ChassisTest extends CommandOpMode {
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
 
-        driveSubsystem = new DriveSubsystem(leftFront, leftBack, rightFront, rightBack);
-        driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX, imuChassis);
+        driveSubsystem      = new DriveSubsystem(leftFront, leftBack, rightFront, rightBack);
+        driveCommand        = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX, imuChassis);
 
-        turretSubsystem = new TurretSubsystem(turretMotor, imuChassis, telemetry);
-
-        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, telemetry);
-        intakeSlideSubsystem = new IntakeSlideSubsystem(linkageServoL, linkageServoR);
-        clawSubsystem = new ClawSubsystem(clawServoL, clawServoR);
+        turretSubsystem     = new TurretSubsystem(turretMotor, imuChassis, telemetry);
+        slideSubsystem      = new SlideSubsystem(slideMotorLeft, slideMotorRight, telemetry);
+        linkageSubsystem    = new LinkageSubsystem(linkageServoL, linkageServoR);
+        clawSubsystem       = new ClawSubsystem(clawServoL, clawServoR);
 
         // Instantiate threads and instant commands.
-        autoTurretTurnThread = new AutoTurretTurnThread(turretSubsystem, imuChassis);
-        turretTurnThread = new TurretTurnThread(turretSubsystem, 0);
+        autoTurretTurnThread    = new AutoTurretTurnThread(turretSubsystem, imuChassis);
+        turretTurnThread        = new TurretTurnThread(turretSubsystem, 0);
 
         autoTurretTurnThread.setDaemon(true);
 
-        grJunctionThread =      new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_GR_JUNCTION);
-        lowJunctionThread =     new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_LOW_JUNCTION);
-        midJunctionThread =     new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_MID_JUNCTION);
-        highJunctionThread =    new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_HIGH_JUNCTION);
+        grJunctionThread    = new SlideThread(slideSubsystem, linkageSubsystem, clawSubsystem, Constants.SLIDE_GR_JUNCTION);
+        lowJunctionThread   = new SlideThread(slideSubsystem, linkageSubsystem, clawSubsystem, Constants.SLIDE_LOW_JUNCTION);
+        midJunctionThread   = new SlideThread(slideSubsystem, linkageSubsystem, clawSubsystem, Constants.SLIDE_MID_JUNCTION);
+        highJunctionThread  = new SlideThread(slideSubsystem, linkageSubsystem, clawSubsystem, Constants.SLIDE_HIGH_JUNCTION);
+        intakeCommand       = new IntakeCommand(clawSubsystem, new SlideThread(slideSubsystem, linkageSubsystem, clawSubsystem, Constants.SLIDE_INTERMEDIARY));
+        scoreThread         = new ScoreThread(clawSubsystem, linkageSubsystem, new ScoreSlideThread(slideSubsystem, Constants.SLIDE_INTAKE), turretTurnThread, turretSubsystem);
 
-        intakeCommand = new IntakeCommand(clawSubsystem, new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_INTERMEDIARY));
-        scoreCommand = new ScoreCommand(clawSubsystem, intakeSlideSubsystem, new ScoreSlideThread(slideSubsystem, Constants.SLIDE_INTAKE), new TurretTurnThread(turretSubsystem, 0));
-
-        telemetryDefaultCommand = new TelemetryDefaultCommand(turretSubsystem, slideSubsystem, intakeSlideSubsystem, driveSubsystem, clawSubsystem, imuChassis, telemetry);
+        telemetryDefaultCommand = new TelemetryDefaultCommand(turretSubsystem, slideSubsystem, linkageSubsystem, driveSubsystem, clawSubsystem, imuChassis, telemetry);
 
         intakeSlideInitPosCommand = new InstantCommand(() -> {
-            intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_INIT_POSITION);
+            linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
         }, slideSubsystem);
 
         intakeSlideExtendCommand = new InstantCommand(() -> {
-            intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
+            linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
         }, slideSubsystem);
 
         IntConsumer setTurretAngle = (int ticks) -> {
-            if (Constants.turretTurnState == Constants.TurretTurnState.ROBOT_CENTRIC || Constants.turretTurnState == Constants.TurretTurnState.FIELD_CENTRIC) {
+            if(Constants.turretTurnState == Constants.TurretTurnState.CONTINUOUS_FIELD_CENTRIC) {
+                autoTurretTurnThread.interrupt();
+                autoTurretTurnThread.turnAngle = ticks;
+                autoTurretTurnThread.start();
+            }
+            else {
                 turretTurnThread.interrupt();
                 turretTurnThread.turnAngle = ticks;
                 turretTurnThread.start();
-
-            } else {
-                autoTurretTurnThread.turnAngle = ticks;
-                if(!autoTurretTurnThread.isAlive()) {
-                    autoTurretTurnThread.run();
-                }
-
-                //telemetry.addData("TurretRotation", okif1);
-               // telemetry.update();
             }
         };
 
@@ -202,28 +199,36 @@ public class ChassisTest extends CommandOpMode {
             }
         });
 
+        toggleLinkageExtension = new InstantCommand(() -> {
+            if(linkageSubsystem.getExtensionPosition() == Constants.INTAKE_SLIDE_INIT_POSITION) {
+                linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
+            }
+            else {
+                linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
+            }
+        });
+
         // Assign commands and threads to buttons.
-        Button startPosButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(intakeSlideInitPosCommand);
 
         Button intakeCommandButton = new GamepadButton(driver1, GamepadKeys.Button.RIGHT_BUMPER).whenPressed(intakeCommand);
-        Button scoreCommandButton = new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(scoreCommand);
+        Button scoreCommandButton = new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(() -> scoreThread.start());
 
-        //Button slideGrJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.run());
-        //Button slideMidJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> midJunctionThread.run());
-        Button slideLowJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(() -> lowJunctionThread.run());
-        Button slideHighJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.Y).whenPressed(() -> highJunctionThread.run());
+        Button slideGrJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.start());
+        Button slideMidJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> midJunctionThread.start());
+        Button slideLowJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(() -> lowJunctionThread.start());
+        Button slideHighJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.Y).whenPressed(() -> highJunctionThread.start());
 
         Button turretTurn0 = new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP).whenPressed(() -> setTurretAngle.accept(0));
         Button turretTurnPos90 = new GamepadButton(driver1, GamepadKeys.Button.DPAD_RIGHT).whenPressed(() -> setTurretAngle.accept(Constants.TURRET_TURN_90));
         Button turretTurnNeg90 = new GamepadButton(driver1, GamepadKeys.Button.DPAD_LEFT).whenPressed(() -> setTurretAngle.accept(-Constants.TURRET_TURN_90));
         Button turretTurn180 = new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN).whenPressed(() -> setTurretAngle.accept(Constants.TURRET_TURN_180));
 
+        Button toggleLinkageExtensionButton = new GamepadButton(driver1, GamepadKeys.Button.LEFT_STICK_BUTTON).whenPressed(toggleLinkageExtension);
         Button toggleTurretStateButton = new GamepadButton(driver2, GamepadKeys.Button.RIGHT_BUMPER).whenPressed(toggleTurretTurnState);
 
-        register(driveSubsystem, turretSubsystem, intakeSlideSubsystem, clawSubsystem);
+        register(driveSubsystem, turretSubsystem, linkageSubsystem, clawSubsystem);
         driveSubsystem.setDefaultCommand(driveCommand);
-        //intakeSlideSubsystem.setDefaultCommand(telemetryDefaultCommand);
-
+        linkageSubsystem.setDefaultCommand(telemetryDefaultCommand);
     }
 
     @Override
@@ -233,3 +238,4 @@ public class ChassisTest extends CommandOpMode {
         CommandScheduler.getInstance().reset();
     }
 }
+

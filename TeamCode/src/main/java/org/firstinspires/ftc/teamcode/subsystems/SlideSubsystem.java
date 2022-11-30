@@ -40,19 +40,26 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
         slideMotorRight.setPositionTolerance(Constants.SLIDE_ALLOWED_ERROR);   // allowed maximum error
 
         // perform the control loop
-        while (!slideMotorLeft.atTargetPosition() && !Constants.ROBOT_STOPPED) {
+        while (!slideMotorLeft.atTargetPosition() && !slideMotorRight.atTargetPosition() && !Constants.ROBOT_STOPPED) {
             slideMotorLeft.set(1);
             slideMotorRight.set(1);
 
-            telemetry.addData("2", 2);
             telemetry.addData("Left Motor Ticks", slideMotorLeft.getCurrentPosition());
             telemetry.addData("Right Motor Ticks", slideMotorRight.getCurrentPosition());
             telemetry.update();
         }
 
-        slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
-        slideMotorRight.setRunMode(Motor.RunMode.RawPower);
-        slideMotorLeft.set(-0.15);
-        slideMotorRight.set(-0.15);
+        if(level <= -15) {
+            slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
+            slideMotorRight.setRunMode(Motor.RunMode.RawPower);
+            slideMotorLeft.set(-0.15);
+            slideMotorRight.set(-0.15);
+        }
+        else {
+            slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
+            slideMotorRight.setRunMode(Motor.RunMode.RawPower);
+            slideMotorLeft.set(0);
+            slideMotorRight.set(0);
+        }
     }
 }

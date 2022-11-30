@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import static java.lang.Math.abs;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 
@@ -23,7 +24,9 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
     public Motor turretMotor;
     public BooleanSupplier isInterrupted;
     public BNO055IMU chassisImu;
-    public double rightTurn, leftTurn,leftTurnTurretRelative,rightTurnTurretRelative;
+    public double rightTurn, leftTurn;
+    public double leftTurnTurretRelative, rightTurnTurretRelative;
+    private PIDFController pidfController;
     private Telemetry telemetry;
 
 
@@ -34,8 +37,10 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
     }
 
     @Override
-    public void rotateTurret(IntSupplier rotateTicks) {
-        turretMotor.setRunMode(Motor.RunMode.PositionControl);
+    public void rotateTurret(int rotateTicks) {
+        turretMotor.setRunMode(Motor.RunMode.RawPower);
+        pidfController = new PIDFController(Constants.TURRET_P, Constants.TURRET_I, Constants.TURRET_D, Constants.TURRED_F);
+
         double ticksOffset = 0.0;
 
         if(Constants.turretTurnState == Constants.TurretTurnState.FIELD_CENTRIC) {
@@ -43,18 +48,19 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
             ticksOffset = calculateOffset(angles); // used for field centric turret.
         }
 
-        turretMotor.setPositionCoefficient(Constants.TURRET_P);
-
         // the turret can't turn more than 90 degrees to the left or 180 degrees to the right as it is restricted by the cable chain.
-        turretMotor.setTargetPosition((int) shortestPathPossible(rotateTicks.getAsInt(), (int)ticksOffset));
-
-        turretMotor.setPositionTolerance(Constants.TURRET_ALLOWED_ERROR); // allowed maximum error
+        pidfController.setSetPoint((int) shortestPathPossible(rotateTicks, (int)ticksOffset));
+        pidfController.setTolerance(Constants.TURRET_ALLOWED_ERROR);
 
         // perform the control loop
-        while ((!turretMotor.atTargetPosition() || Constants.inputState == Constants.InputState.MANUAL_CONTROL) && !Constants.ROBOT_STOPPED && !isInterrupted.getAsBoolean()) {
-            //turretMotor.setTargetPosition(clipTicksToConstraints(rotateTicks.getAsInt() - (int)ticksOffset));
-            turretMotor.set(1);
+        while (!pidfController.atSetPoint() && !Constants.ROBOT_STOPPED && !isInterrupted.getAsBoolean()) {
+            turretMotor.set(
+                    pidfController.calculate(
+                            turretMotor.getCurrentPosition()
+                    )
+            );
         }
+
         turretMotor.stopMotor(); // stop the motor
     }
 
@@ -67,17 +73,11 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
 
         double To = turnTicks - ticksOffset;
 
-        rightTurn = Constants.TURRET_FULL_ROTATION - Math.abs(To);
+        rightTurn = To - Constants.TURRET_FULL_ROTATION;
         leftTurn = To;
 
         leftTurnTurretRelative = To - turretTicks;
-        rightTurnTurretRelative = Constants.TURRET_FULL_ROTATION - Math.abs(leftTurnTurretRelative);
-
-        telemetry.addData("right: ", rightTurn);
-        telemetry.addData("left: ", leftTurn);
-        telemetry.addData("left relative", leftTurnTurretRelative);
-        telemetry.addData("right relative", rightTurnTurretRelative);
-        telemetry.update();
+        rightTurnTurretRelative = leftTurnTurretRelative - Constants.TURRET_FULL_ROTATION;
 
         if (Math.abs(leftTurnTurretRelative) < Math.abs(rightTurnTurretRelative)) {
             if (leftTurn <= Constants.TURRET_CONSTRAINT_MAX && leftTurn >= Constants.TURRET_CONSTRAINT_MIN) {

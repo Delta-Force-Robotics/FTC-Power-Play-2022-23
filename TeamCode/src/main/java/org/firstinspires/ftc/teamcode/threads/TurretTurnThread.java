@@ -18,6 +18,6 @@ public class TurretTurnThread extends Thread {
 
     @Override
     public void run() {
-        turretInterface.rotateTurret(() -> turnAngle);
+        turretInterface.rotateTurret(turnAngle);
     }
 }

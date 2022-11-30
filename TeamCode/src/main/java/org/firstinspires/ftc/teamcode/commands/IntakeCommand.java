@@ -5,7 +5,6 @@ import com.arcrobotics.ftclib.util.Timing;
 
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.IntakeSlideSubsystem;
 import org.firstinspires.ftc.teamcode.threads.SlideThread;
 
 import java.util.concurrent.TimeUnit;
@@ -25,7 +24,8 @@ public class IntakeCommand extends CommandBase {
     public void execute() {
         clawSubsystem.useClaw(Constants.CLOSE_CLAW);
 
-        timer = new Timing.Timer(1000, TimeUnit.MILLISECONDS);
+
+        timer = new Timing.Timer(250, TimeUnit.MILLISECONDS);
         timer.start();
         while (!timer.done()) {
             // Sleep
@@ -33,7 +33,7 @@ public class IntakeCommand extends CommandBase {
         timer.pause();
 
         if (!slideThread.isAlive()) {
-            slideThread.run();
+            slideThread.start();
         }
     }
 
