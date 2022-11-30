@@ -57,12 +57,7 @@ public class ScoreCommand extends CommandBase {
 
             scoreSlideThread.run();
 
-            /*timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
-            timer.start();
-            while (!timer.done()) {
-                // Sleep
-            }
-            timer.pause();*/
+
         }
 
 
