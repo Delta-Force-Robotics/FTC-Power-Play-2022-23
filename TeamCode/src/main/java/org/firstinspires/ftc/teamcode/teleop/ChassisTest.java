@@ -23,6 +23,7 @@ import org.firstinspires.ftc.teamcode.commands.TelemetryDefaultCommand;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.threads.AutoTurretTurnThread;
+import org.firstinspires.ftc.teamcode.threads.ScoreSlideThread;
 import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import org.firstinspires.ftc.teamcode.commands.DriveCommand;
 import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
@@ -158,7 +159,7 @@ public class ChassisTest extends CommandOpMode {
         highJunctionThread =    new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_HIGH_JUNCTION);
 
         intakeCommand = new IntakeCommand(clawSubsystem, new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_INTERMEDIARY));
-        scoreCommand = new ScoreCommand(clawSubsystem, intakeSlideSubsystem, new SlideThread(slideSubsystem, intakeSlideSubsystem, clawSubsystem, Constants.SLIDE_INTAKE), new TurretTurnThread(turretSubsystem, 0));
+        scoreCommand = new ScoreCommand(clawSubsystem, intakeSlideSubsystem, new ScoreSlideThread(slideSubsystem, Constants.SLIDE_INTAKE), new TurretTurnThread(turretSubsystem, 0));
 
         telemetryDefaultCommand = new TelemetryDefaultCommand(turretSubsystem, slideSubsystem, intakeSlideSubsystem, driveSubsystem, clawSubsystem, imuChassis, telemetry);
 
@@ -207,8 +208,8 @@ public class ChassisTest extends CommandOpMode {
         Button intakeCommandButton = new GamepadButton(driver1, GamepadKeys.Button.RIGHT_BUMPER).whenPressed(intakeCommand);
         Button scoreCommandButton = new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(scoreCommand);
 
-        Button slideGrJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.run());
-        Button slideMidJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> midJunctionThread.run());
+        //Button slideGrJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> grJunctionThread.run());
+        //Button slideMidJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> midJunctionThread.run());
         Button slideLowJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(() -> lowJunctionThread.run());
         Button slideHighJunctionButton = new GamepadButton(driver1, GamepadKeys.Button.Y).whenPressed(() -> highJunctionThread.run());
 
@@ -221,7 +222,7 @@ public class ChassisTest extends CommandOpMode {
 
         register(driveSubsystem, turretSubsystem, intakeSlideSubsystem, clawSubsystem);
         driveSubsystem.setDefaultCommand(driveCommand);
-        intakeSlideSubsystem.setDefaultCommand(telemetryDefaultCommand);
+        //intakeSlideSubsystem.setDefaultCommand(telemetryDefaultCommand);
 
     }
 

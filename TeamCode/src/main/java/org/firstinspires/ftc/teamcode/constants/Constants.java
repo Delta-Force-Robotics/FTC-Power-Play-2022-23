@@ -48,8 +48,8 @@ public class Constants {
     public static final int TURRET_TURN_60 = 378;
     public static final int TURRET_TURN_90 = 567;
     public static final int TURRET_TURN_180 = -1134;
-    public static final int TURRET_CONSTRAINT_MAX = 1134;
-    public static final int TURRET_CONSTRAINT_MIN = -1424;
+    public static final int TURRET_CONSTRAINT_MAX = 1185;
+    public static final int TURRET_CONSTRAINT_MIN = -1707;
     public static final int TURRET_FULL_ROTATION = 2268;
 
     public static double OP_MODE_START_GYRO_ZERO = 0;

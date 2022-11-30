@@ -46,8 +46,12 @@ public class TelemetryDefaultCommand extends CommandBase {
         telemetry.addData("Gyroscope 1 Y ", angles1.secondAngle);
         telemetry.addData("Gyroscope 1 X ", angles1.thirdAngle);
         telemetry.addData("Turret Motor", turretSubsystem.turretMotor.getCurrentPosition());
+        telemetry.addData("Right Turn", turretSubsystem.rightTurn);
+        telemetry.addData("Left Turn", turretSubsystem.leftTurn);
         telemetry.addData("Left Slide Motor", slideSubsystem.slideMotorLeft.getCurrentPosition());
         telemetry.addData("Right Slide Motor", slideSubsystem.slideMotorRight.getCurrentPosition());
+        telemetry.addData("left relative", turretSubsystem.leftTurnTurretRelative);
+        telemetry.addData("right relative", turretSubsystem.rightTurnTurretRelative);
         telemetry.update();
     }
 }

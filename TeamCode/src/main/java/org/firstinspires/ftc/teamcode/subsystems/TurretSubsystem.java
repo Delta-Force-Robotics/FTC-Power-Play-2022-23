@@ -1,14 +1,11 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-import static java.lang.Double.min;
 import static java.lang.Math.abs;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -26,6 +23,7 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
     public Motor turretMotor;
     public BooleanSupplier isInterrupted;
     public BNO055IMU chassisImu;
+    public double rightTurn, leftTurn,leftTurnTurretRelative,rightTurnTurretRelative;
     private Telemetry telemetry;
 
 
@@ -48,7 +46,7 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
         turretMotor.setPositionCoefficient(Constants.TURRET_P);
 
         // the turret can't turn more than 90 degrees to the left or 180 degrees to the right as it is restricted by the cable chain.
-        turretMotor.setTargetPosition((int)rotateTurretPresetPosition(rotateTicks.getAsInt(), (int)ticksOffset));
+        turretMotor.setTargetPosition((int) shortestPathPossible(rotateTicks.getAsInt(), (int)ticksOffset));
 
         turretMotor.setPositionTolerance(Constants.TURRET_ALLOWED_ERROR); // allowed maximum error
 
@@ -64,31 +62,35 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
         return (int)(((-angles.firstAngle) / 360.0) * (double)Constants.TURRET_FULL_ROTATION); // DREAPTA E CU MINUS
     }
 
-    public double rotateTurretPresetPosition(int turnTicks, int ticksOffset) {
+    public double shortestPathPossible(int turnTicks, int ticksOffset) {
         double turretTicks = turretMotor.getCurrentPosition();
 
         double To = turnTicks - ticksOffset;
 
-        double rightTurn = Constants.TURRET_FULL_ROTATION - To;
-        double leftTurn = To;
+        rightTurn = Constants.TURRET_FULL_ROTATION - Math.abs(To);
+        leftTurn = To;
+
+        leftTurnTurretRelative = To - turretTicks;
+        rightTurnTurretRelative = Constants.TURRET_FULL_ROTATION - Math.abs(leftTurnTurretRelative);
 
         telemetry.addData("right: ", rightTurn);
         telemetry.addData("left: ", leftTurn);
+        telemetry.addData("left relative", leftTurnTurretRelative);
+        telemetry.addData("right relative", rightTurnTurretRelative);
         telemetry.update();
 
-        if (leftTurn < abs(rightTurn)) {
+        if (Math.abs(leftTurnTurretRelative) < Math.abs(rightTurnTurretRelative)) {
+            if (leftTurn <= Constants.TURRET_CONSTRAINT_MAX && leftTurn >= Constants.TURRET_CONSTRAINT_MIN) {
+                return leftTurn;
+            }
 
-            if (leftTurn > Constants.TURRET_CONSTRAINT_MAX) {
-                return rightTurn;
-            } else {
-                return leftTurn;
-            }
+            return rightTurn;
         } else {
-            if (rightTurn < Constants.TURRET_CONSTRAINT_MIN) {
-                return leftTurn;
-            } else {
+            if (rightTurn <= Constants.TURRET_CONSTRAINT_MAX && rightTurn >= Constants.TURRET_CONSTRAINT_MIN) {
                 return rightTurn;
             }
+
+            return leftTurn;
         }
     }
 }

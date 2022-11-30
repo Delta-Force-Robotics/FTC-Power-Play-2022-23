@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
+import org.firstinspires.ftc.teamcode.threads.ScoreSlideThread;
 import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import org.firstinspires.ftc.teamcode.threads.TurretTurnThread;
 
@@ -16,14 +17,14 @@ public class ScoreCommand extends CommandBase {
 
         ClawSubsystem clawSubsystem;
         IntakeSlideSubsystem intakeSlideSubsystem;
-        SlideThread slideThread;
+        ScoreSlideThread scoreSlideThread;
         TurretTurnThread turretTurnThread;
         Timing.Timer timer;
 
-        public ScoreCommand(ClawSubsystem clawSubsystem, IntakeSlideSubsystem intakeSlideSubsystem, SlideThread slideThread, TurretTurnThread turretTurnThread) {
+        public ScoreCommand(ClawSubsystem clawSubsystem, IntakeSlideSubsystem intakeSlideSubsystem, ScoreSlideThread scoreSlideThread, TurretTurnThread turretTurnThread) {
             this.clawSubsystem = clawSubsystem;
             this.intakeSlideSubsystem = intakeSlideSubsystem;
-            this.slideThread = slideThread;
+            this.scoreSlideThread=scoreSlideThread;
             this.turretTurnThread = turretTurnThread;
         }
 
@@ -39,7 +40,11 @@ public class ScoreCommand extends CommandBase {
             timer.pause();
 
             intakeSlideSubsystem.slideIntake(Constants.INTAKE_SLIDE_INIT_POSITION);
-            slideThread.run();
+
+            Constants.turretTurnState=Constants.TurretTurnState.ROBOT_CENTRIC;
+
+                turretTurnThread.run();
+
 
             timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
             timer.start();
@@ -48,16 +53,17 @@ public class ScoreCommand extends CommandBase {
             }
             timer.pause();
 
-            if(!turretTurnThread.isAlive()) {
-                turretTurnThread.run();
+            Constants.turretTurnState=Constants.TurretTurnState.FIELD_CENTRIC;
+
+            scoreSlideThread.run();
+
+            /*timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
+            timer.start();
+            while (!timer.done()) {
+                // Sleep
             }
+            timer.pause();*/
         }
 
-        @Override
-        public void end(boolean interrupted) {
-            if(interrupted) {
-                slideThread.interrupt();
-                turretTurnThread.interrupt();
-            }
-        }
+
 }
