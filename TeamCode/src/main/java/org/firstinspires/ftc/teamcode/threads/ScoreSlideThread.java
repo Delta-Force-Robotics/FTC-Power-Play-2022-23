@@ -4,20 +4,18 @@ import com.arcrobotics.ftclib.util.Timing;
 
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
 
-import java.util.concurrent.TimeUnit;
-
 public class ScoreSlideThread extends  Thread{
-    SlideInterface slideInterface;
+    SlideInterface slideSubsystem;
     int slideLevelForScore;
     Timing.Timer timer;
 
-    public ScoreSlideThread(SlideInterface slideInterface, int slideLevelForScore){
-        this.slideInterface=slideInterface;
-        this.slideLevelForScore=slideLevelForScore;
+    public ScoreSlideThread(SlideInterface slideSubsystem, int slideLevelForScore){
+        this.slideSubsystem = slideSubsystem;
+        this.slideLevelForScore = slideLevelForScore;
     }
 
     @Override
     public void run(){
-        slideInterface.setLevel(slideLevelForScore);
+        slideSubsystem.setLevel(slideLevelForScore, false);
     }
 }

@@ -83,7 +83,7 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
         constructMatrix();
 
         // Allocate a native context object. See the corresponding deletion in the finalizer
-        nativeApriltagPtr = AprilTagDetectorJNI.createApriltagDetector(AprilTagDetectorJNI.TagFamily.TAG_16h5.string, 3, 3);
+        nativeApriltagPtr = AprilTagDetectorJNI.createApriltagDetector(AprilTagDetectorJNI.TagFamily.TAG_36h11.string, 3, 3);
     }
 
     @Override
@@ -107,23 +107,7 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
     {
         // Convert to greyscale
         Imgproc.cvtColor(input, grey, Imgproc.COLOR_RGBA2GRAY);
-        Mat m = new Mat(input.rows(), input.cols(), input.type());
-        grey.copyTo(m);
 
-        greyMax = 0;
-        greyMin = 255;
-        for(int i = 0; i < grey.height(); i++)
-            for(int j = 0; j < grey.width(); j++){
-                double[] data = grey.get(i, j);
-
-                greyMax = Math.max(greyMax, data[0]);
-                greyMin = Math.min(greyMax, data[0]);
-            }
-
-        alpha = 255/(greyMax - greyMin);
-        beta = -greyMin*alpha;
-
-        m.convertTo(grey, -1, alpha, beta);
         synchronized (decimationSync)
         {
             if(needToSetDecimation)
@@ -150,7 +134,7 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
             draw3dCubeMarker(input, tagsizeX, tagsizeX, tagsizeY, 5, pose.rvec, pose.tvec, cameraMatrix);
         }
 
-        return grey;
+        return input;
     }
 
     public void setDecimation(float decimation)

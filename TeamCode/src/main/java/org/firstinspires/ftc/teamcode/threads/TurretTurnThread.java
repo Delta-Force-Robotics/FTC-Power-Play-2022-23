@@ -6,18 +6,20 @@ import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 
 public class TurretTurnThread extends Thread {
 
-    private TurretSubsystem turretInterface;
+    public TurretSubsystem turretInterface;
     public int turnAngle;
+    boolean auto;
 
-    public TurretTurnThread(TurretSubsystem turretInterface, int turnAngle) {
+    public TurretTurnThread(TurretSubsystem turretInterface, int turnAngle, boolean auto) {
         this.turretInterface = turretInterface;
         this.turretInterface.isInterrupted = this::isInterrupted;
         this.turnAngle = turnAngle;
+        this.auto = auto;
 
     }
 
     @Override
     public void run() {
-        turretInterface.rotateTurret(turnAngle);
+        turretInterface.rotateTurret(turnAngle, auto);
     }
 }

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.commands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -22,7 +23,7 @@ public class DriveCommand extends CommandBase {
     private final DoubleSupplier forward;
     private final DoubleSupplier strafe;
     private final DoubleSupplier rotation;
-    private final BNO055IMU gyro;
+    private final IMU gyro;
 
     /**
      * @param driveSubsystem    The drive subsystem this command wil run on.
@@ -32,7 +33,7 @@ public class DriveCommand extends CommandBase {
      * @param gyro              The control hub gyro for field-centric drive
      **/
 
-    public DriveCommand(DriveSubsystem driveSubsystem, DoubleSupplier strafe, DoubleSupplier forward, DoubleSupplier rotation, BNO055IMU gyro) {
+    public DriveCommand(DriveSubsystem driveSubsystem, DoubleSupplier strafe, DoubleSupplier forward, DoubleSupplier rotation, IMU gyro) {
         this.driveSubsystem = driveSubsystem;
         this.strafe = strafe;
         this.forward = forward;
@@ -43,6 +44,6 @@ public class DriveCommand extends CommandBase {
 
     @Override
     public void execute() {
-        driveSubsystem.drive(strafe.getAsDouble(), forward.getAsDouble(), rotation.getAsDouble(), gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
+        driveSubsystem.drive(strafe.getAsDouble(), forward.getAsDouble(), rotation.getAsDouble(), gyro.getRobotOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
     }
 }

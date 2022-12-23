@@ -7,9 +7,9 @@ package org.firstinspires.ftc.teamcode.constants;
 
 public class HardwareConstants {
     // Drive motors
-    public static final String ID_LEFT_FRONT_MOTOR = "lf";
-    public static final String ID_LEFT_BACK_MOTOR = "lb";
-    public static final String ID_RIGHT_FRONT_MOTOR = "rf";
+    public static final String ID_LEFT_FRONT_MOTOR = "lf"; // stanga
+    public static final String ID_LEFT_BACK_MOTOR = "lb"; // mij
+    public static final String ID_RIGHT_FRONT_MOTOR = "rf"; // dr
     public static final String ID_RIGHT_BACK_MOTOR = "rb";
 
     // Turret motor
@@ -26,4 +26,8 @@ public class HardwareConstants {
     // Claw servos
     public static final String ID_INTAKE_CLAW_SERVO_LEFT = "clawServoL";
     public static final String ID_INTAKE_CLAW_SERVO_RIGHT = "clawServoR";
+
+    public static final String ID_LEFT_ENCODER = "lf";
+    public static final String ID_RIGHT_ENCODER = "rf";
+    public static final String ID_LATERAL_ENCODER = "lb";
 }

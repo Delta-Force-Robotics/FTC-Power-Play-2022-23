@@ -7,14 +7,14 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import org.firstinspires.ftc.teamcode.Interfaces.TurretInterface;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.LinkageSubsystem;
-import org.firstinspires.ftc.teamcode.threads.AutoTurretTurnThread;
+import org.firstinspires.ftc.teamcode.threads.ContTurretTurnThread;
 import org.firstinspires.ftc.teamcode.threads.TurretTurnThread;
 
 import java.util.function.DoubleSupplier;
 
 public class TurretManualControlCommand extends CommandBase {
     private LinkageSubsystem linkageSubsystem;
-    private AutoTurretTurnThread autoTurretTurnThread;
+    private ContTurretTurnThread contTurretTurnThread;
     private TurretTurnThread turretTurnThread;
     private DoubleSupplier controllerX;
     private DoubleSupplier controllerY;
@@ -22,9 +22,9 @@ public class TurretManualControlCommand extends CommandBase {
     private TurretInterface turretInterface;
     private Motor turretMotor;
 
-    public TurretManualControlCommand(LinkageSubsystem linkageSubsystem, AutoTurretTurnThread autoTurretTurnThread, TurretTurnThread turretTurnThread, DoubleSupplier controllerX, DoubleSupplier controllerY, BNO055IMU imu) {
+    public TurretManualControlCommand(LinkageSubsystem linkageSubsystem, ContTurretTurnThread contTurretTurnThread, TurretTurnThread turretTurnThread, DoubleSupplier controllerX, DoubleSupplier controllerY, BNO055IMU imu) {
         this.linkageSubsystem = linkageSubsystem;
-        this.autoTurretTurnThread = autoTurretTurnThread;
+        this.contTurretTurnThread = contTurretTurnThread;
         this.turretTurnThread = turretTurnThread;
         this.controllerX = controllerX;
         this.controllerY = controllerY;
@@ -43,9 +43,9 @@ public class TurretManualControlCommand extends CommandBase {
                     turretTurnThread.run();
                 }
             } else {
-                autoTurretTurnThread.turnAngle = (int) theta;
-                if (!autoTurretTurnThread.isAlive()) {
-                    autoTurretTurnThread.run();
+                contTurretTurnThread.turnAngle = (int) theta;
+                if (!contTurretTurnThread.isAlive()) {
+                    contTurretTurnThread.run();
                 }
             }
 

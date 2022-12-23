@@ -3,10 +3,10 @@ package org.firstinspires.ftc.teamcode.threads;
 import com.arcrobotics.ftclib.util.Timing;
 
 import org.firstinspires.ftc.teamcode.Interfaces.ClawInterface;
-import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;
+import org.firstinspires.ftc.teamcode.Interfaces.LinkageInterface;
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
 import org.firstinspires.ftc.teamcode.constants.Constants;
-
+import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,15 +19,15 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class SlideThread extends Thread {
-    SlideInterface slideInterface;
-    IntakeSlideInterface intakeSlideInterface;
+    public SlideInterface slideSubsystem;
+    LinkageInterface linkageInterface;
     ClawInterface clawInterface;
-    int slideLevel;
+    public int slideLevel;
     Timing.Timer timer;
 
-    public SlideThread(SlideInterface slideInterface, IntakeSlideInterface intakeSlideInterface, ClawInterface clawInterface, int slideLevel) {
-        this.slideInterface = slideInterface;
-        this.intakeSlideInterface = intakeSlideInterface;
+    public SlideThread(SlideSubsystem slideSubsystem, LinkageInterface linkageInterface, ClawInterface clawInterface, int slideLevel) {
+        this.slideSubsystem = slideSubsystem;
+        this.linkageInterface = linkageInterface;
         this.clawInterface = clawInterface;
         this.slideLevel = slideLevel;
     }
@@ -35,14 +35,15 @@ public class SlideThread extends Thread {
     @Override
     public void run() {
         clawInterface.useClaw(Constants.CLOSE_CLAW);
-        timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
+
+        timer = new Timing.Timer(300, TimeUnit.MILLISECONDS);
         timer.start();
         while(!timer.done()) {
-            Thread.yield();
+
         }
         timer.pause();
 
-        intakeSlideInterface.setExtensionPosition(Constants.INTAKE_SLIDE_INTERMEDIARY_POSITION);
-        slideInterface.setLevel(slideLevel);
+        linkageInterface.setExtensionPosition(Constants.INTAKE_SLIDE_INTERMEDIARY_POSITION);
+        slideSubsystem.setLevel(slideLevel, false);
     }
 }

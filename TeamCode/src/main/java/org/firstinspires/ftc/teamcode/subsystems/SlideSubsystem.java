@@ -1,16 +1,31 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 
+import java.util.Timer;
+import java.util.function.BooleanSupplier;
+
 public class SlideSubsystem extends SubsystemBase implements SlideInterface {
     public Motor slideMotorLeft;
     public Motor slideMotorRight;
+    public BooleanSupplier isInterrupted;
+    private PIDFController pidfExtendLeft;
+    private PIDFController pidfExtendRight;
+    private PIDFController pidfRetractLeft;
+    private PIDFController pidfRetractRight;
+    private double[] pidfCoefficientsExtend;
+    private double[] pidfCoefficientsRetract;
     private Telemetry telemetry;
+
+    //test
+    public double calculateLeft;
+    public double calculateRight;
 
     public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry) {
         this.slideMotorLeft = slideMotorLeft;
@@ -23,39 +38,112 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
      * @param level Intended level for slide extension.
      */
     @Override
-    public void setLevel(int level) {
-        slideMotorLeft.setRunMode(Motor.RunMode.PositionControl);
-        slideMotorRight.setRunMode(Motor.RunMode.PositionControl);
+    public void setLevel(int level, boolean auto) {
+        double timerAverage = 0;
+        int timerCount = 0;
 
-        // set and get the position coefficient
-        slideMotorLeft.setPositionCoefficient(Constants.SLIDE_P);
-        slideMotorRight.setPositionCoefficient(Constants.SLIDE_P);
+        if(!auto) {
+            pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+        }
+        else {
+            pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p+0.02, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p+0.005, Constants.SLIDE_RETRACT_PIDF_COEFF.i+0.02, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+        }
 
-        // set the target position
-        slideMotorLeft.setTargetPosition(level);      // an integer representing
-        slideMotorRight.setTargetPosition(level);      // desired tick count
+        pidfExtendLeft = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
+        pidfExtendRight = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
+        pidfRetractLeft = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+        pidfRetractRight = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
 
-        // set the tolerance
-        slideMotorLeft.setPositionTolerance(Constants.SLIDE_ALLOWED_ERROR);   // allowed maximum error
-        slideMotorRight.setPositionTolerance(Constants.SLIDE_ALLOWED_ERROR);   // allowed maximum error
+        slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
+        slideMotorRight.setRunMode(Motor.RunMode.RawPower);
 
-        // perform the control loop
-        while (!slideMotorLeft.atTargetPosition() && !slideMotorRight.atTargetPosition() && !Constants.ROBOT_STOPPED) {
-            slideMotorLeft.set(1);
-            slideMotorRight.set(1);
+        if(slideMotorLeft.getCurrentPosition() - level < 0) {
+            pidfRetractRight.setSetPoint(level);
+            pidfRetractLeft.setSetPoint(level);
 
-            telemetry.addData("Left Motor Ticks", slideMotorLeft.getCurrentPosition());
-            telemetry.addData("Right Motor Ticks", slideMotorRight.getCurrentPosition());
+            pidfRetractRight.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+            pidfRetractLeft.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+
+            while(!pidfRetractRight.atSetPoint() && !pidfRetractLeft.atSetPoint() && !isInterrupted.getAsBoolean()) {
+                double timeStart = System.nanoTime();
+
+                calculateRight = pidfRetractRight.calculate(slideMotorRight.getCurrentPosition(), level);
+                calculateLeft = pidfRetractLeft.calculate(slideMotorLeft.getCurrentPosition(), level);
+
+                slideMotorRight.set(
+                        pidfRetractRight.calculate(
+                                slideMotorRight.getCurrentPosition(),
+                                level
+                        ) - Constants.SLIDE_GRAVITY_COMPENSATOR
+                );
+
+                slideMotorLeft.set(
+                        pidfRetractLeft.calculate(
+                                slideMotorLeft.getCurrentPosition(),
+                                level
+                        ) - Constants.SLIDE_GRAVITY_COMPENSATOR
+                );
+
+                timerAverage += System.nanoTime() - timeStart;
+                timerCount++;
+
+                telemetry.addData("CalculateRight", calculateRight);
+                telemetry.addData("CalculateLeft", calculateLeft);
+
+                telemetry.addData("Slide Error", pidfRetractRight.getPositionError());
+
+                telemetry.update();
+            }
+
+            telemetry.addData("Loop Time Average", timerAverage / timerCount);
+            telemetry.addData("Slide Error", pidfRetractRight.getPositionError());
+            telemetry.update();
+        }
+        else {
+            pidfExtendRight.setSetPoint(level);
+            pidfExtendLeft.setSetPoint(level);
+
+            pidfExtendRight.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+            pidfExtendLeft.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+
+            while(!pidfExtendRight.atSetPoint() && !pidfExtendLeft.atSetPoint() && !isInterrupted.getAsBoolean()) {
+                double timeStart = System.nanoTime();
+
+                slideMotorRight.set(
+                        pidfExtendRight.calculate(
+                                slideMotorRight.getCurrentPosition(),
+                                level
+                        )
+                );
+
+                slideMotorLeft.set(
+                        pidfExtendLeft.calculate(
+                                slideMotorLeft.getCurrentPosition(),
+                                level
+                        )
+                );
+
+                timerAverage += System.nanoTime() - timeStart;
+                timerCount++;
+
+                telemetry.addData("Slide Error", pidfExtendRight.getPositionError());
+                telemetry.addData("Loop time", System.nanoTime() - timeStart);
+                telemetry.update();
+            }
+
+            telemetry.addData("Loop Time Average", timerAverage / timerCount);
+            telemetry.addData("Slide Error", pidfExtendRight.getPositionError());
             telemetry.update();
         }
 
-        if(level <= -15) {
+        if (level <= -15) {
             slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
             slideMotorRight.setRunMode(Motor.RunMode.RawPower);
-            slideMotorLeft.set(-0.15);
-            slideMotorRight.set(-0.15);
-        }
-        else {
+            slideMotorLeft.set(Constants.MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_HIGH_JUNCTION);
+            slideMotorRight.set(Constants.MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_HIGH_JUNCTION);
+        } else {
             slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
             slideMotorRight.setRunMode(Motor.RunMode.RawPower);
             slideMotorLeft.set(0);

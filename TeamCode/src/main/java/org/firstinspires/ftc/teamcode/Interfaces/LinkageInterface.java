@@ -1,5 +1,5 @@
 package org.firstinspires.ftc.teamcode.Interfaces;
 
-public interface IntakeSlideInterface {
+public interface LinkageInterface {
     void setExtensionPosition(double slideIntakePosinton);
 }

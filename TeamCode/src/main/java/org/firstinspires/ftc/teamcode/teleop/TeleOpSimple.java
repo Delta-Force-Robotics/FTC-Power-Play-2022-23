@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -18,6 +19,10 @@ import org.firstinspires.ftc.teamcode.util.BNO055IMUUtil;
 
 @TeleOp
 public class TeleOpSimple extends LinearOpMode {
+    private DcMotor lf = null;
+    private DcMotor rf = null;
+    private DcMotor lb = null;
+    private DcMotor rb = null;
     private DcMotor turretMotor;
     private Motor leftSlideMotor;
     private Motor rightSlideMotor;
@@ -27,10 +32,18 @@ public class TeleOpSimple extends LinearOpMode {
     private Servo leftIntakeSlideServo;
     private Servo rightIntakeSlideServo;
 
+    double lfPower, rfPower, lbPower, rbPower;
+
+
+
     @Override
     public void runOpMode() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        lf = hardwareMap.get(DcMotor.class, HardwareConstants.ID_LEFT_FRONT_MOTOR);
+        rf = hardwareMap.get(DcMotor.class, HardwareConstants.ID_RIGHT_FRONT_MOTOR);
+        lb = hardwareMap.get(DcMotor.class, HardwareConstants.ID_LEFT_BACK_MOTOR);
+        rb = hardwareMap.get(DcMotor.class, HardwareConstants.ID_RIGHT_BACK_MOTOR);
         clawServoR = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_RIGHT);
         clawServoL = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_LEFT);
         leftIntakeSlideServo = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
@@ -39,9 +52,22 @@ public class TeleOpSimple extends LinearOpMode {
         leftSlideMotor = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
         rightSlideMotor = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_RIGHT);
 
+        lf.setDirection(DcMotor.Direction.REVERSE);
+        lb.setDirection(DcMotor.Direction.REVERSE);
+        rf.setDirection(DcMotor.Direction.FORWARD);
+        rb.setDirection(DcMotor.Direction.FORWARD);
         clawServoR.setDirection(Servo.Direction.REVERSE);
         rightIntakeSlideServo.setDirection(Servo.Direction.REVERSE);
 
+        lf.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rf.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lb.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rb.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         clawServoR.setPosition(0);
         clawServoL.setPosition(0);
@@ -61,6 +87,21 @@ public class TeleOpSimple extends LinearOpMode {
 
         while(opModeIsActive()) {
             Orientation angles  = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+            double drive = -gamepad2.left_stick_y;
+            double strafe = gamepad2.left_stick_x;
+            double turn = gamepad2.right_stick_x;
+
+            // Send calculated power to wheels
+            lfPower = Range.clip(drive + turn + strafe, -1.0, 1.0);
+            rfPower = Range.clip(drive - turn - strafe, -1.0, 1.0);
+            lbPower = Range.clip(drive + turn - strafe, -1.0, 1.0);
+            rbPower = Range.clip(drive - turn + strafe, -1.0, 1.0);
+
+            lf.setPower(lfPower);
+            rf.setPower(rfPower);
+            lb.setPower(lbPower);
+            rb.setPower(rbPower);
 
             if (gamepad1.a) {
                 clawServoR.setPosition(clawServoR.getPosition() + 0.1);
@@ -92,8 +133,8 @@ public class TeleOpSimple extends LinearOpMode {
 
             turretMotor.setPower(-gamepad1.left_stick_y);
 
-            leftSlideMotor.set(gamepad1.right_trigger - gamepad1.left_trigger + 0.1);
-            rightSlideMotor.set(gamepad1.right_trigger - gamepad1.left_trigger + 0.1);
+            leftSlideMotor.set(gamepad1.right_trigger - gamepad1.left_trigger);
+            rightSlideMotor.set(gamepad1.right_trigger - gamepad1.left_trigger);
 
 
             telemetry.addData("Gyroscope Z ", angles.firstAngle);
@@ -107,6 +148,7 @@ public class TeleOpSimple extends LinearOpMode {
             telemetry.addData("Slide Motor Power", gamepad1.right_trigger - gamepad1.left_trigger);
             telemetry.addData("Claw Servo Left", clawServoL.getPosition());
             telemetry.addData("Claw Servo Right", clawServoR.getPosition());
+
             telemetry.update();
 
         }

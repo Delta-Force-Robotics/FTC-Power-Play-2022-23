@@ -4,9 +4,9 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.Interfaces.IntakeSlideInterface;
+import org.firstinspires.ftc.teamcode.Interfaces.LinkageInterface;
 
-public class LinkageSubsystem extends SubsystemBase implements IntakeSlideInterface {
+public class LinkageSubsystem extends SubsystemBase implements LinkageInterface {
 
     private Servo slideServoL;
     private Servo slideServoR;

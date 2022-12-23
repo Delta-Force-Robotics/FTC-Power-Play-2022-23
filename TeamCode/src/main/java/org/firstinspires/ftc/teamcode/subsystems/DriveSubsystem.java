@@ -6,9 +6,9 @@ import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
 public class DriveSubsystem extends SubsystemBase {
-    private Motor LeftFront;
+    public Motor LeftFront;
     private Motor leftBack;
-    private Motor rightFront;
+    public Motor rightFront;
     private Motor rightBack;
     private final MecanumDrive mecanumDrive;
 
