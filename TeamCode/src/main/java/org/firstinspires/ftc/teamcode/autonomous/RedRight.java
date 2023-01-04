@@ -502,7 +502,7 @@ public class RedRight extends LinearOpMode {
 
 
     public double getExtensionToObject(Vector2d object, Pose2d poseEstimate) {
-        double robotDistanceToObject = MathUtils.hypot(poseEstimate.getX() - firstConeStack.getX(), poseEstimate.getY() - firstConeStack.getY()) * 2.54;
+        double robotDistanceToObject = MathUtils.hypot(poseEstimate.getX() - object.getX(), poseEstimate.getY() - object.getY()) * 2.54;
         robotDistanceToObject = Range.clip(robotDistanceToObject, 0, Constants.INTAKE_SLIDE_FULL_EXTENDED_LENGTH_CM);
 
         return robotDistanceToObject / Constants.INTAKE_SLIDE_FULL_EXTENDED_LENGTH_CM * Constants.INTAKE_SLIDE_EXTENDED_SLIDE;
@@ -510,7 +510,7 @@ public class RedRight extends LinearOpMode {
 
     public int getTicksToObject(Vector2d object, Pose2d poseEstimate) {
         double robotAngle = Math.toDegrees(poseEstimate.getHeading());
-        double angle = robotAngle - Math.toDegrees(MathUtils.atan2(firstJunction.getY() - poseEstimate.getY(), firstJunction.getX() - poseEstimate.getX()));
+        double angle = robotAngle - Math.toDegrees(MathUtils.atan2(object.getY() - poseEstimate.getY(), object.getX() - poseEstimate.getX()));
 
         return (int)(angle / 360.0 * (double)Constants.TURRET_FULL_ROTATION);
     }
