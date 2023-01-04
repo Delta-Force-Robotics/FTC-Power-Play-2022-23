@@ -3,16 +3,10 @@ package org.firstinspires.ftc.teamcode.commands;
 import android.util.Log;
 
 import com.arcrobotics.ftclib.command.CommandBase;
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.DcMotorController;
-import com.qualcomm.robotcore.hardware.DcMotorControllerEx;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
-import com.qualcomm.robotcore.util.Device;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -23,14 +17,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.TempUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 import org.firstinspires.ftc.teamcode.constants.Constants;
-import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.DriveSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.LinkageSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TelemetryDefaultCommand extends CommandBase {
@@ -84,13 +76,13 @@ public class TelemetryDefaultCommand extends CommandBase {
         telemetry.addData("Gyroscope 1 Y ", angles1.secondAngle);
         telemetry.addData("Gyroscope 1 X ", angles1.thirdAngle);
         telemetry.addData("Turret Motor", turretSubsystem.turretMotor.getCurrentPosition());
-        telemetry.addData("Right Turn", turretSubsystem.rightTurn);
-        telemetry.addData("Left Turn", turretSubsystem.leftTurn);
+        telemetry.addData("Right Turn", turretSubsystem.secondPath);
+        telemetry.addData("Left Turn", turretSubsystem.firstPath);
         telemetry.addData("Left Slide Motor", slideSubsystem.slideMotorLeft.getCurrentPosition());
         telemetry.addData("Right Slide Motor", slideSubsystem.slideMotorRight.getCurrentPosition());
-        telemetry.addData("Left relative", turretSubsystem.leftTurnTurretRelative);
-        telemetry.addData("Right relative", turretSubsystem.rightTurnTurretRelative);
-        telemetry.addData("Linkage Extension Position", linkageSubsystem.getExtensionPosition());
+        telemetry.addData("Left relative", turretSubsystem.firstPathRelative);
+        telemetry.addData("Right relative", turretSubsystem.secondPathRelative);
+        telemetry.addData("Linkage Extension Position", linkageSubsystem.getExtensionState());
         telemetry.addData("Left Encoder", driveSubsystem.LeftFront.getCurrentPosition());
         telemetry.addData("Right Encoder", driveSubsystem.rightFront.getCurrentPosition());
         telemetry.update();

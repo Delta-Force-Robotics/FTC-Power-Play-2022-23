@@ -23,10 +23,8 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.util.Timing;
-import com.outoftheboxrobotics.photoncore.PhotonCore;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -39,8 +37,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.threads.AutoIntakeThread;
-import org.firstinspires.ftc.teamcode.threads.AutoScoreThread;
 import org.firstinspires.ftc.teamcode.threads.AutoSlideThread;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.vision.AprilTagDetectionPipeline;
@@ -110,8 +106,6 @@ public class BlueRight extends LinearOpMode
     private TrajectorySequence traj2;
     private TrajectorySequence parkSpot3;
 
-    private AutoScoreThread autoScoreThread;
-    private AutoIntakeThread autoIntakeThread;
     private AutoSlideThread autoSlideThread;
 
     public IntConsumer turretTurnThread;
@@ -170,8 +164,8 @@ public class BlueRight extends LinearOpMode
 
         rightClawServo.setPosition(0);
         leftClawServo.setPosition(0);
-        leftLinkageServo.setPosition(0);
-        rightLinkageServo.setPosition(0);
+        leftLinkageServo.setPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
+        rightLinkageServo.setPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
 
         turretMotor.resetEncoder();
         leftSlideMotor.resetEncoder();

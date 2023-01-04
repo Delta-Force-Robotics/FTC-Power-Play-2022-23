@@ -27,6 +27,26 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
     public double calculateLeft;
     public double calculateRight;
 
+    public enum SlideState {
+        HIGH(Constants.SLIDE_HIGH_JUNCTION),
+        MID(Constants.SLIDE_MID_JUNCTION),
+        LOW(Constants.SLIDE_LOW_JUNCTION),
+        INTAKE(Constants.SLIDE_INTAKE);
+
+        private int id;
+        SlideState(int slideLevel) {
+            id = slideLevel;
+        }
+
+        int getId() { return id; }
+        void setId(int slideLevel) {
+            id = slideLevel;
+        }
+        boolean isSameSlideLevel(int slideLevel) { return id == slideLevel; }
+    }
+
+    private SlideState slideState = SlideState.INTAKE;
+
     public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry) {
         this.slideMotorLeft = slideMotorLeft;
         this.slideMotorRight = slideMotorRight;
@@ -39,6 +59,12 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
      */
     @Override
     public void setLevel(int level, boolean auto) {
+        if(slideState.isSameSlideLevel(level)) {
+            return;
+        }
+
+        slideState.setId(level);
+
         double timerAverage = 0;
         int timerCount = 0;
 
@@ -48,7 +74,7 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
         }
         else {
             pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p+0.02, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
-            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p+0.005, Constants.SLIDE_RETRACT_PIDF_COEFF.i+0.02, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
         }
 
         pidfExtendLeft = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
@@ -149,5 +175,13 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
             slideMotorLeft.set(0);
             slideMotorRight.set(0);
         }
+    }
+
+    public SlideState getSlideState() {
+        return slideState;
+    }
+
+    public void setSlideState(SlideState slideState) {
+        this.slideState = slideState;
     }
 }

@@ -25,17 +25,24 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.util.LUT;
 import com.arcrobotics.ftclib.util.Timing;
 import com.outoftheboxrobotics.photoncore.PhotonCore;
 import com.qualcomm.hardware.bosch.BNO055IMUNew;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.util.Range;
 
+import org.apache.commons.math3.util.FastMath;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.MathUtils.MathUtils;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.drive.DriveConstants;
@@ -44,11 +51,10 @@ import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.LinkageSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
-import org.firstinspires.ftc.teamcode.threads.AutoIntakeThread;
-import org.firstinspires.ftc.teamcode.threads.AutoScoreThread;
+import org.firstinspires.ftc.teamcode.threads.AutoContTurretThread;
 import org.firstinspires.ftc.teamcode.threads.AutoSlideThread;
 import org.firstinspires.ftc.teamcode.threads.AutoTurretThread;
-import org.firstinspires.ftc.teamcode.threads.SlideThread;
+import org.firstinspires.ftc.teamcode.threads.Test;
 import org.firstinspires.ftc.teamcode.threads.TurretTurnThread;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.vision.AprilTagDetectionPipeline;
@@ -57,12 +63,13 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.function.IntConsumer;
 
 @Autonomous
-public class RedRight extends LinearOpMode
-{
+public class RedRight extends LinearOpMode {
     private IMU imu;
 
     OpenCvCamera camera;
@@ -101,30 +108,29 @@ public class RedRight extends LinearOpMode
     private Vector2d secondConeStack = new Vector2d(-68.5,-11.5);
 
     private Vector2d firstJunction = new Vector2d(23.5, 0);
+    private Vector2d midJunction = new Vector2d(0, -23.5);
     private Vector2d secondJunction = new Vector2d(-23.5,0);
 
     private Motor leftSlideMotor;
     private Motor rightSlideMotor;
     private Motor turretMotor;
 
-    private Servo leftLinkageServo;
-    private Servo rightLinkageServo;
+    private ServoImplEx leftLinkageServo;
+    private ServoImplEx rightLinkageServo;
     private Servo rightClawServo;
     private Servo leftClawServo;
 
     private SampleMecanumDrive drive;
-    private TrajectorySequence trajectoryIntakeLeftSide;
-    private TrajectorySequence trajectoryIntakeRightSide;
     private TrajectorySequence traj1;
+    private TrajectorySequence traj2;
     private TrajectorySequence parkSpot1;
     private TrajectorySequence parkSpot2;
     private TrajectorySequence parkSpot3;
 
-    private AutoScoreThread autoScoreThread;
-    private AutoIntakeThread autoIntakeThread;
     private AutoSlideThread autoSlideThread;
     private AutoTurretThread autoTurretThread;
     private TurretTurnThread turretTurnThread;
+    private AutoContTurretThread autoContTurretThread;
 
     private ClawSubsystem clawSubsystem;
     private LinkageSubsystem linkageSubsystem;
@@ -137,13 +143,27 @@ public class RedRight extends LinearOpMode
 
     public TurretTurnThread turretThread;
     public AutoSlideThread slideThread;
+    private Test test;
+
+    ModernRoboticsI2cRangeSensor rangeSensor;
 
     private Timing.Timer timer;
 
     @Override
     public void runOpMode() {
         PhotonCore.experimental.setSinglethreadedOptimized(false);
+        PhotonCore.experimental.setMaximumParallelCommands(14);
         PhotonCore.enable();
+
+        double[] realValues = Constants.REAL_VALUE;
+        double[] sensorValues = Constants.DISPLAYED_VALUE;
+        LUT<Double, Double> correctedSensorValues = new LUT<Double, Double>();
+
+        for(int i = 0; i < realValues.length; i++) {
+            correctedSensorValues.add(sensorValues[i], realValues[i]);
+        }
+
+        rangeSensor = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "rangeSensor");
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
@@ -167,25 +187,36 @@ public class RedRight extends LinearOpMode
             }
         });
 
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        telemetry = dashboard.getTelemetry();
+
+        BigDecimal sensorValue = BigDecimal.valueOf(rangeSensor.getDistance(DistanceUnit.INCH)).setScale(2, RoundingMode.HALF_EVEN);
+        drive = new SampleMecanumDrive(hardwareMap);
+        drive.setPoseEstimate(new Pose2d(70.5 - 8 - correctedSensorValues.getClosest(sensorValue.doubleValue()), -63, Math.toRadians(90)));
+
+        telemetry.addData("sensorValue", 70.5 - 8 - correctedSensorValues.getClosest(sensorValue.doubleValue()));
+        telemetry.update();
+
         Constants.turretTurnState = Constants.TurretTurnState.ROBOT_CENTRIC;
 
         leftSlideMotor = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
         rightSlideMotor = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_RIGHT);
         turretMotor = new Motor(hardwareMap, HardwareConstants.ID_TURRET_MOTOR);
 
-        leftLinkageServo = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
-        rightLinkageServo = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_RIGHT);
+        leftLinkageServo = hardwareMap.get(ServoImplEx.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
+        rightLinkageServo = hardwareMap.get(ServoImplEx.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_RIGHT);
         rightClawServo = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_RIGHT);
         leftClawServo = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_LEFT);
 
         leftSlideMotor.setInverted(true);
         rightClawServo.setDirection(Servo.Direction.REVERSE);
-        rightLinkageServo.setDirection(Servo.Direction.REVERSE);
+        rightLinkageServo.setDirection(ServoImplEx.Direction.REVERSE);
 
-        rightClawServo.setPosition(0);
-        leftClawServo.setPosition(0);
-        leftLinkageServo.setPosition(0);
-        rightLinkageServo.setPosition(0);
+        leftClawServo.setPosition(Constants.OPEN_CLAW);
+        rightClawServo.setPosition(Constants.OPEN_CLAW);
+
+        leftLinkageServo.setPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
+        rightLinkageServo.setPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
 
         turretMotor.resetEncoder();
         leftSlideMotor.resetEncoder();
@@ -201,47 +232,59 @@ public class RedRight extends LinearOpMode
         imu.initialize(parameters);
         imu.resetYaw();
 
-        clawSubsystem = new ClawSubsystem(leftClawServo,rightClawServo);
-        slideSubsystem = new SlideSubsystem(leftSlideMotor,rightSlideMotor,telemetry);
+        clawSubsystem = new ClawSubsystem(leftClawServo, rightClawServo);
+        slideSubsystem = new SlideSubsystem(leftSlideMotor, rightSlideMotor, telemetry);
         turretSubsystem = new TurretSubsystem(turretMotor, imu, hardwareMap, telemetry);
         linkageSubsystem = new LinkageSubsystem(leftLinkageServo, rightLinkageServo);
 
         slideSubsystem.isInterrupted = this::isStopRequested;
         turretSubsystem.isInterrupted = this::isStopRequested;
 
-        autoIntakeThread = new AutoIntakeThread(clawSubsystem, linkageSubsystem, new SlideThread(slideSubsystem,linkageSubsystem,clawSubsystem,Constants.SLIDE_HIGH_JUNCTION), new TurretTurnThread(turretSubsystem, turnAngle, false));
-        autoScoreThread = new AutoScoreThread(clawSubsystem, linkageSubsystem, new SlideThread(slideSubsystem,linkageSubsystem,clawSubsystem,Constants.SLIDE_HIGH_JUNCTION), new TurretTurnThread(turretSubsystem, turnAngle, false));
-
+        autoContTurretThread = new AutoContTurretThread(drive::getPoseEstimate, firstJunction, turretSubsystem, linkageSubsystem, clawSubsystem, new AutoSlideThread(slideSubsystem), telemetry);
+        test = new Test(drive::getPoseEstimate, drive.getLocalizer()::getPoseVelocity, firstJunction, turretSubsystem, linkageSubsystem, clawSubsystem, new AutoSlideThread(slideSubsystem), telemetry);
         turretTurnThread = new TurretTurnThread(turretSubsystem,turnAngle,true);
         slideThread = new AutoSlideThread(slideSubsystem);
 
-        drive = new SampleMecanumDrive(hardwareMap);
-        drive.setPoseEstimate(new Pose2d(35.5, -62.5, Math.toRadians(90)));
+        autoContTurretThread.setDaemon(true);
+        autoContTurretThread.setPriority(Thread.MIN_PRIORITY);
+
+        test.setDaemon(true);
+        test.setPriority(Thread.MIN_PRIORITY);
 
         traj1 = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                .splineToSplineHeading(new Pose2d(35.5, -35.5, Math.toRadians(90)), Math.toRadians(90))
-                .splineToSplineHeading(new Pose2d(45.5, -11.5, Math.toRadians(0)), Math.toRadians(0),
-                        SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                .splineToSplineHeading(new Pose2d(35.5, -35.5, Math.toRadians(90)), Math.toRadians(90),
+                        SampleMecanumDrive.getVelocityConstraint(25, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL)
+                )
+                .splineToSplineHeading(new Pose2d(46, -13, Math.toRadians(0)), Math.toRadians(0),
+                        SampleMecanumDrive.getVelocityConstraint(30, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL)
                 )
                 .build();
 
-        parkSpot1 = drive.trajectorySequenceBuilder(traj1.end())
-                .lineToConstantHeading(new Vector2d(10, -12))
+        traj2 = drive.trajectorySequenceBuilder(traj1.end())
+                .lineToConstantHeading(new Vector2d(-46, -13),
+                        SampleMecanumDrive.getVelocityConstraint(30, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
+                        SampleMecanumDrive.getAccelerationConstraint(DriveConstants.MAX_ACCEL)
+                )
                 .build();
 
-        parkSpot2 = drive.trajectorySequenceBuilder(traj1.end())
-                .lineToConstantHeading(new Vector2d(35, -11.5))
+        parkSpot1 = drive.trajectorySequenceBuilder(traj2.end())
+                .lineToConstantHeading(new Vector2d(-10, -13))
                 .build();
 
-        parkSpot3 = drive.trajectorySequenceBuilder(traj1.end())
-                .lineToConstantHeading(new Vector2d(59, -12))
+        parkSpot2 = drive.trajectorySequenceBuilder(traj2.end())
+                .lineToConstantHeading(new Vector2d(-35, -13))
+                .build();
+
+        parkSpot3 = drive.trajectorySequenceBuilder(traj2.end())
+                .lineToConstantHeading(new Vector2d(-59, -13))
                 .build();
 
         telemetry.addData("imu angle", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         telemetry.update();
 
-        telemetry.setMsTransmissionInterval(50);
+        telemetry.setMsTransmissionInterval(100);
         while (!isStarted() && !isStopRequested())
         {
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
@@ -256,23 +299,24 @@ public class RedRight extends LinearOpMode
                 telemetry.update();
             }
 
-            sleep(20);
+            sleep(100);
         }
 
         FtcDashboard ftcDashboard = FtcDashboard.getInstance();
         telemetry = ftcDashboard.getTelemetry();
 
-        Thread closeCamera = new Thread(() -> camera.closeCameraDevice());
+        Thread closeCamera = new Thread(() -> {
+            camera.closeCameraDevice();
+            camera.pauseViewport();
+        });
         closeCamera.start();
-
-        /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
 
         waitForStart();
 
         if(!isStopRequested()){
             clawSubsystem.useClaw(Constants.CLOSE_CLAW);
             sleep(200);
-            slideThread.slideLevel = Constants.SLIDE_LOW_JUNCTION;
+            slideThread.slideLevel = Constants.SLIDE_HIGH_JUNCTION - 20;
             slideThread.start();
 
             if( tagID == Constants.APRIL_TAG_PARK_ZONE_1 ){
@@ -284,8 +328,9 @@ public class RedRight extends LinearOpMode
             else {
                 caseC(drive);
             }
-        }
 
+            linkageSubsystem.disablePwm();
+        }
     }
 
     public void caseA(SampleMecanumDrive drive){
@@ -308,14 +353,6 @@ public class RedRight extends LinearOpMode
         telemetry.addData("robotAngle", robotAngle);
         telemetry.addData("imuAngle", imuAngle);
 
-        intakeRoutinePreload(ticks-30);
-
-        for(int slideLevel : slidePositions) {
-            scoreRoutine(slideLevel, ticks2);
-            intakeRoutine(ticks-30);
-        }
-
-        scoreRoutine(0, 0);
 
         drive.followTrajectorySequence(parkSpot1);
     }
@@ -340,48 +377,55 @@ public class RedRight extends LinearOpMode
         telemetry.addData("robotAngle", robotAngle);
         telemetry.addData("imuAngle", imuAngle);
 
-        intakeRoutinePreload(ticks - 30);
-
-        for(int slideLevel : slidePositions) {
-            scoreRoutine(slideLevel, ticks2);
-            intakeRoutine(ticks - 30);
-        }
-
-        scoreRoutine(0, 0);
 
         drive.followTrajectorySequence(parkSpot2);
     }
 
     public void caseC(SampleMecanumDrive drive){
+        //autoContTurretThread.turretHomePosition = 40;
+        //autoContTurretThread.nextSlideLevel = slidePositions[0];
+        //autoContTurretThread.start();
+        test.turretHomePosition = 40;
+        test.nextSlideLevel = slidePositions[0];
+        test.start();
+
         drive.followTrajectorySequence(traj1);
+
+        //autoContTurretThread.interrupt();
+        test.interrupt();
 
         Pose2d poseEstimate = drive.getPoseEstimate();
         double robotAngle = Math.toDegrees(poseEstimate.getHeading());
         double imuAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES) + 90;
 
-        double angle = robotAngle - Math.toDegrees(Math.atan2(firstJunction.getY() - poseEstimate.getY(), firstJunction.getX() - poseEstimate.getX()));
-        int ticks = (int)(angle / 360.0 * (double)Constants.TURRET_FULL_ROTATION);
+        double extensionToFirstJunction = getExtensionToObject(firstJunction, poseEstimate);
+        double extensionToFirstConeStack = getExtensionToObject(firstConeStack, poseEstimate);
 
-        double angle2 = robotAngle - Math.toDegrees(Math.atan2(firstConeStack.getY() - poseEstimate.getY(), firstConeStack.getX() - poseEstimate.getX()));
-        int ticks2 = (int) (angle2 / 360.0 * (double)Constants.TURRET_FULL_ROTATION);
+        int ticks = getTicksToObject(firstJunction, poseEstimate);
+        int ticks2 = getTicksToObject(firstConeStack, poseEstimate);
 
-        telemetry.addData("angle", angle);
-        telemetry.addData("angle2", angle2);
         telemetry.addData("ticks", ticks);
         telemetry.addData("ticks2", ticks2);
         telemetry.addData("robotAngle", robotAngle);
         telemetry.addData("imuAngle", imuAngle);
 
-        intakeRoutinePreload(ticks - 30);
-
-        for(int slideLevel : slidePositions) {
-            scoreRoutine(slideLevel, ticks2);
-            intakeRoutine(ticks - 30);
+        for(int i = 1; i < slidePositions.length; i++) {
+            intakeRoutine(ticks, extensionToFirstConeStack);
+            scoreRoutine(slidePositions[i], ticks2, extensionToFirstJunction);
         }
 
-        scoreRoutine(0, 0);
+        intakeRoutine(ticks - 120, 1);
 
-        drive.followTrajectorySequence(parkSpot3);
+        //autoContTurretThread.turretHomePosition = Constants.TURRET_TURN_180;
+        //autoContTurretThread.nextSlideLevel = slidePositions[0];
+        //autoContTurretThread.junctionLocation = secondJunction;
+        //autoContTurretThread.start();
+
+        test.turretHomePosition = Constants.TURRET_TURN_180;
+        test.nextSlideLevel = slidePositions[0];
+        test.junctionLocation = secondJunction;
+        test.start();
+        drive.followTrajectorySequence(traj2);
     }
 
 
@@ -404,12 +448,17 @@ public class RedRight extends LinearOpMode
         turretTurnThread.start();
 
         while(turretTurnThread.isAlive() || slideThread.isAlive());
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void intakeRoutine(int turnAngle) {
-        linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
+    public void intakeRoutine(int turnAngle, double extensionToConeStack) {
+        linkageSubsystem.setExtensionPosition(extensionToConeStack);
 
-        sleep(450);
+        sleep(350);
 
         clawSubsystem.useClaw(Constants.CLOSE_CLAW);
 
@@ -418,7 +467,7 @@ public class RedRight extends LinearOpMode
         slideThread.slideLevel = Constants.SLIDE_HIGH_JUNCTION;
         slideThread.start();
 
-        sleep(100);
+        sleep(200);
 
         linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
 
@@ -428,12 +477,14 @@ public class RedRight extends LinearOpMode
         while(turretTurnThread.isAlive() || slideThread.isAlive());
     }
 
-    public void scoreRoutine(int slideLevel, int turnAngle) {
-        linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_EXTENDED_SLIDE);
+    public void scoreRoutine(int slideLevel, int turnAngle, double extensionToJunction) {
+        linkageSubsystem.setExtensionPosition(extensionToJunction);
 
-        sleep(600);
+        sleep(350);
 
         clawSubsystem.useClaw(Constants.OPEN_CLAW);
+
+        sleep(50);
 
         linkageSubsystem.setExtensionPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
 
@@ -445,6 +496,22 @@ public class RedRight extends LinearOpMode
         slideThread.slideLevel = slideLevel;
         slideThread.start();
 
+
         while(slideThread.isAlive() || turretTurnThread.isAlive());
+    }
+
+
+    public double getExtensionToObject(Vector2d object, Pose2d poseEstimate) {
+        double robotDistanceToObject = MathUtils.hypot(poseEstimate.getX() - firstConeStack.getX(), poseEstimate.getY() - firstConeStack.getY()) * 2.54;
+        robotDistanceToObject = Range.clip(robotDistanceToObject, 0, Constants.INTAKE_SLIDE_FULL_EXTENDED_LENGTH_CM);
+
+        return robotDistanceToObject / Constants.INTAKE_SLIDE_FULL_EXTENDED_LENGTH_CM * Constants.INTAKE_SLIDE_EXTENDED_SLIDE;
+    }
+
+    public int getTicksToObject(Vector2d object, Pose2d poseEstimate) {
+        double robotAngle = Math.toDegrees(poseEstimate.getHeading());
+        double angle = robotAngle - Math.toDegrees(MathUtils.atan2(firstJunction.getY() - poseEstimate.getY(), firstJunction.getX() - poseEstimate.getX()));
+
+        return (int)(angle / 360.0 * (double)Constants.TURRET_FULL_ROTATION);
     }
 }

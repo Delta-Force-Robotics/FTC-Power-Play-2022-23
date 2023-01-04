@@ -27,14 +27,16 @@ public class ScoreThread extends Thread {
 
     @Override
     public void run() {
-        slideSubsystem.setLevel(slideSubsystem.slideMotorLeft.getCurrentPosition() + 40, false);
+        if(slideSubsystem.getSlideState() != SlideSubsystem.SlideState.INTAKE) {
+            slideSubsystem.setLevel(slideSubsystem.slideMotorLeft.getCurrentPosition() + 40, false);
 
-        timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
-        timer.start();
-        while (!timer.done()) {
-            // Sleep
+            timer = new Timing.Timer(200, TimeUnit.MILLISECONDS);
+            timer.start();
+            while (!timer.done()) {
+                // Sleep
+            }
+            timer.pause();
         }
-        timer.pause();
 
         clawSubsystem.useClaw(Constants.OPEN_CLAW);
 

@@ -16,6 +16,6 @@ public class AutoSlideThread extends Thread {
 
     @Override
     public void run() {
-        slideSubsystem.setLevel(slideLevel, false);
+        slideSubsystem.setLevel(slideLevel, true);
     }
 }

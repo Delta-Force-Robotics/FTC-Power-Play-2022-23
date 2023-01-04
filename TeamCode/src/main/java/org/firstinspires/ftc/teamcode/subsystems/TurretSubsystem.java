@@ -26,8 +26,8 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
     public BooleanSupplier isInterrupted;
     private PIDFController pidfController;
     private double[] pidfCoefficients;
-    public double rightTurn, leftTurn;
-    public double leftTurnTurretRelative, rightTurnTurretRelative;
+    public double secondPath, firstPath;
+    public double firstPathRelative, secondPathRelative;
 
 
     public TurretSubsystem(Motor turretMotor, IMU chassisImu, HardwareMap hardwareMap , Telemetry telemetry) {
@@ -85,29 +85,24 @@ public class TurretSubsystem extends SubsystemBase implements TurretInterface {
 
         double To = turnTicks - ticksOffset;
 
-        rightTurn = To - Constants.TURRET_FULL_ROTATION;
-        leftTurn = To;
+        firstPath = To;
+        firstPathRelative = To - turretTicks;
 
-        leftTurnTurretRelative = To - turretTicks;
-        rightTurnTurretRelative = leftTurnTurretRelative - Constants.TURRET_FULL_ROTATION;
+        secondPath = firstPath - Math.signum(firstPath) * Constants.TURRET_FULL_ROTATION;
+        secondPathRelative = firstPathRelative - Math.signum(firstPathRelative) * Constants.TURRET_FULL_ROTATION;
 
-        if (rightTurnTurretRelative <= -Constants.TURRET_FULL_ROTATION) {
-            rightTurnTurretRelative = rightTurnTurretRelative + 2*Constants.TURRET_FULL_ROTATION;
-            rightTurn = rightTurn + 2*Constants.TURRET_FULL_ROTATION;
-        }
-
-        if (Math.abs(leftTurnTurretRelative) < Math.abs(rightTurnTurretRelative)) {
-            if (leftTurn <= Constants.TURRET_CONSTRAINT_MAX && leftTurn >= Constants.TURRET_CONSTRAINT_MIN) {
-                return leftTurn;
+        if (Math.abs(firstPathRelative) < Math.abs(secondPathRelative)) {
+            if (firstPath <= Constants.TURRET_CONSTRAINT_MAX && firstPath >= Constants.TURRET_CONSTRAINT_MIN) {
+                return firstPath;
             }
 
-            return rightTurn;
+            return secondPath;
         } else {
-            if (rightTurn <= Constants.TURRET_CONSTRAINT_MAX && rightTurn >= Constants.TURRET_CONSTRAINT_MIN) {
-                return rightTurn;
+            if (secondPath <= Constants.TURRET_CONSTRAINT_MAX && secondPath >= Constants.TURRET_CONSTRAINT_MIN) {
+                return secondPath;
             }
 
-            return leftTurn;
+            return firstPath;
         }
     }
 }

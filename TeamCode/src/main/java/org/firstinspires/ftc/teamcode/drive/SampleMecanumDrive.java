@@ -25,6 +25,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.hardware.configuration.LynxConstants;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
@@ -55,7 +56,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kV;
 @Config
 public class SampleMecanumDrive extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 1, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(7, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(7, 2, 0);
 
     public static double LATERAL_MULTIPLIER = 1.22830975107921;
 
@@ -76,11 +77,13 @@ public class SampleMecanumDrive extends MecanumDrive {
     private BNO055IMU imu;
     private VoltageSensor batteryVoltageSensor;
 
+    private LynxModule controlHubModule;
+
     public SampleMecanumDrive(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
 
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
-                new Pose2d(0.1, 0.1, Math.toRadians(0.5)), 0.5);
+                new Pose2d(0.1, 0.1, Math.toRadians(0.5)), 0.1);
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
 
@@ -88,6 +91,11 @@ public class SampleMecanumDrive extends MecanumDrive {
 
         for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+
+            if(module.isParent() && LynxConstants.isEmbeddedSerialNumber(module.getSerialNumber())) {
+                module.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+                controlHubModule = module;
+            }
         }
 
         // TODO: adjust the names of the following hardware devices to match your configuration
@@ -205,6 +213,8 @@ public class SampleMecanumDrive extends MecanumDrive {
     }
 
     public void update() {
+        controlHubModule.clearBulkCache();
+
         updatePoseEstimate();
         DriveSignal signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
         if (signal != null) setDriveSignal(signal);

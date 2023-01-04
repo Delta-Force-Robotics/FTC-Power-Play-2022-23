@@ -3,15 +3,24 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImpl;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 import org.firstinspires.ftc.teamcode.Interfaces.LinkageInterface;
 
 public class LinkageSubsystem extends SubsystemBase implements LinkageInterface {
 
-    private Servo slideServoL;
-    private Servo slideServoR;
+    private ServoImplEx slideServoL;
+    private ServoImplEx slideServoR;
 
-    public LinkageSubsystem(Servo slideServoL, Servo slideServoR) {
+    public enum ExtensionState {
+        EXTENDED,
+        RETRACTED
+    }
+
+    private ExtensionState extensionState = ExtensionState.RETRACTED;
+
+    public LinkageSubsystem(ServoImplEx slideServoL, ServoImplEx slideServoR) {
         this.slideServoL = slideServoL;
         this.slideServoR = slideServoR;
     }
@@ -25,8 +34,17 @@ public class LinkageSubsystem extends SubsystemBase implements LinkageInterface 
         slideServoR.setPosition(slideIntakePosition);
     }
 
-    public double getExtensionPosition() {
-        return slideServoL.getPosition();
+    public ExtensionState getExtensionState() {
+        return extensionState;
+    }
+
+    public void setExtensionState(ExtensionState extensionState) {
+        this.extensionState = extensionState;
+    }
+
+    public void disablePwm() {
+        slideServoL.setPwmDisable();
+        slideServoR.setPwmDisable();
     }
 }
 

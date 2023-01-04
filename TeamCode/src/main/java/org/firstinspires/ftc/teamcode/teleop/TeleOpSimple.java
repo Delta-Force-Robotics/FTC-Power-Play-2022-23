@@ -5,9 +5,13 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Const;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
@@ -29,12 +33,13 @@ public class TeleOpSimple extends LinearOpMode {
     private BNO055IMU imu;
     private Servo clawServoR;
     private Servo clawServoL;
-    private Servo leftIntakeSlideServo;
-    private Servo rightIntakeSlideServo;
+    private ServoImplEx leftIntakeSlideServo;
+    private ServoImplEx rightIntakeSlideServo;
 
-    double lfPower, rfPower, lbPower, rbPower;
-
-
+    double lfPower;
+    double rfPower;
+    double lbPower;
+    double rbPower;
 
     @Override
     public void runOpMode() {
@@ -46,8 +51,8 @@ public class TeleOpSimple extends LinearOpMode {
         rb = hardwareMap.get(DcMotor.class, HardwareConstants.ID_RIGHT_BACK_MOTOR);
         clawServoR = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_RIGHT);
         clawServoL = hardwareMap.get(Servo.class, HardwareConstants.ID_INTAKE_CLAW_SERVO_LEFT);
-        leftIntakeSlideServo = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
-        rightIntakeSlideServo = hardwareMap.get(Servo.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_RIGHT);
+        leftIntakeSlideServo = hardwareMap.get(ServoImplEx.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_LEFT);
+        rightIntakeSlideServo = hardwareMap.get(ServoImplEx.class, HardwareConstants.ID_SLIDE_LINKAGE_SERVO_RIGHT);
         turretMotor = hardwareMap.get(DcMotor.class, HardwareConstants.ID_TURRET_MOTOR);
         leftSlideMotor = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
         rightSlideMotor = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_RIGHT);
@@ -57,7 +62,7 @@ public class TeleOpSimple extends LinearOpMode {
         rf.setDirection(DcMotor.Direction.FORWARD);
         rb.setDirection(DcMotor.Direction.FORWARD);
         clawServoR.setDirection(Servo.Direction.REVERSE);
-        rightIntakeSlideServo.setDirection(Servo.Direction.REVERSE);
+        rightIntakeSlideServo.setDirection(ServoImplEx.Direction.REVERSE);
 
         lf.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rf.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -71,13 +76,18 @@ public class TeleOpSimple extends LinearOpMode {
 
         clawServoR.setPosition(0);
         clawServoL.setPosition(0);
-        leftIntakeSlideServo.setPosition(0);
-        rightIntakeSlideServo.setPosition(0);
+        leftIntakeSlideServo.setPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
+        rightIntakeSlideServo.setPosition(Constants.INTAKE_SLIDE_INIT_POSITION);
 
         rightSlideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         leftSlideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
         leftSlideMotor.setInverted(true);
+
+        leftIntakeSlideServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        rightIntakeSlideServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        //clawServoL.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        //clawServoR.setPwmRange(new PwmControl.PwmRange(500, 2500));
 
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
@@ -152,5 +162,8 @@ public class TeleOpSimple extends LinearOpMode {
             telemetry.update();
 
         }
+
+        leftIntakeSlideServo.setPwmDisable();
+        rightIntakeSlideServo.setPwmDisable();
     }
 }
