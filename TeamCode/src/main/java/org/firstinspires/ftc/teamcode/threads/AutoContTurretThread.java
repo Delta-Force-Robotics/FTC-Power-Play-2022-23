@@ -4,20 +4,20 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.MathUtils.MathUtils;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.ClawSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.LinkageSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 
 import java.util.function.Supplier;
 
 public class AutoContTurretThread extends Thread{
     public Supplier<Pose2d> poseEstimate;
+    public Pose2d lastPose;
+    public Pose2d velocities;
     public Vector2d junctionLocation;
     public TurretSubsystem turretSubsystem;
     public LinkageSubsystem linkageSubsystem;
@@ -26,6 +26,14 @@ public class AutoContTurretThread extends Thread{
     public Telemetry telemetry;
     public int turretHomePosition;
     public int nextSlideLevel;
+
+    private double feedForwardTerm;
+    private double predictedX;
+    private double predictedY;
+    private double predictedHeading;
+    private double predictedTurretTheta;
+    private int lastTurretValue;
+    private int currentTurretPosition;
 
     private PIDFController pidfController;
     private double[] pidfCoefficients;
@@ -48,6 +56,8 @@ public class AutoContTurretThread extends Thread{
         pidfController = new PIDFController(pidfCoefficients[0], pidfCoefficients[1], pidfCoefficients[2], pidfCoefficients[3]);
 
         Pose2d pose = poseEstimate.get();
+        lastPose = pose;
+
         int ticks = getTicksToJunction(pose);
         double linkageExtension = getExtensionToJunction(pose);
 
@@ -56,12 +66,22 @@ public class AutoContTurretThread extends Thread{
         while(!isInterrupted() && linkageExtension > Constants.INTAKE_SLIDE_EXTENDED_SLIDE) {
             pose = poseEstimate.get();
             ticks = getTicksToJunction(pose);
+            velocities = pose.minus(lastPose);
+
+            predictedX = velocities.getX() + pose.getX();
+            predictedY = velocities.getY() + pose.getY();
+            predictedHeading = velocities.getHeading() + pose.getHeading();
+
+            currentTurretPosition = turretSubsystem.turretMotor.getCurrentPosition();
+
+            predictedTurretTheta = MathUtils.turretTicksToRadians(2 * currentTurretPosition + lastTurretValue);
+            feedForwardTerm = MathUtils.atan2(junctionLocation.getY() - predictedY, junctionLocation.getX() + predictedX) - predictedTurretTheta;
 
             turretSubsystem.turretMotor.set(
                     pidfController.calculate(
                             turretSubsystem.turretMotor.getCurrentPosition(),
                             ticks
-                    )
+                    ) + feedForwardTerm * Constants.TURRET_AUTO_FF_TERM
             );
 
             linkageExtension = getExtensionToJunction(pose);
@@ -71,11 +91,7 @@ public class AutoContTurretThread extends Thread{
             telemetry.addData("Linkage Extension", linkageExtension);
             telemetry.update();
 
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            lastTurretValue = currentTurretPosition;
         }
 
         clawSubsystem.useClaw(Constants.OPEN_CLAW);
@@ -96,7 +112,7 @@ public class AutoContTurretThread extends Thread{
     }
 
     public double getExtensionToJunction(Pose2d poseEstimate) {
-        double robotDistanceToJunction = MathUtils.hypot(poseEstimate.getX() - junctionLocation.getX(), poseEstimate.getY() - junctionLocation.getY()) * 2.54;
+        double robotDistanceToJunction = MathUtils.hypot(Math.abs(poseEstimate.getX() - junctionLocation.getX()), Math.abs(poseEstimate.getY() - junctionLocation.getY())) * 2.54;
 
         return robotDistanceToJunction / (Constants.INTAKE_SLIDE_FULL_EXTENDED_LENGTH_CM + 4.75) * Constants.INTAKE_SLIDE_EXTENDED_SLIDE;
     }

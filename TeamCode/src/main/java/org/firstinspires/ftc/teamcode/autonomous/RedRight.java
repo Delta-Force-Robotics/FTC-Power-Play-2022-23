@@ -38,7 +38,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.Range;
 
-import org.apache.commons.math3.util.FastMath;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -54,7 +53,6 @@ import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.threads.AutoContTurretThread;
 import org.firstinspires.ftc.teamcode.threads.AutoSlideThread;
 import org.firstinspires.ftc.teamcode.threads.AutoTurretThread;
-import org.firstinspires.ftc.teamcode.threads.Test;
 import org.firstinspires.ftc.teamcode.threads.TurretTurnThread;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.vision.AprilTagDetectionPipeline;
@@ -143,7 +141,6 @@ public class RedRight extends LinearOpMode {
 
     public TurretTurnThread turretThread;
     public AutoSlideThread slideThread;
-    private Test test;
 
     ModernRoboticsI2cRangeSensor rangeSensor;
 
@@ -191,6 +188,7 @@ public class RedRight extends LinearOpMode {
         telemetry = dashboard.getTelemetry();
 
         BigDecimal sensorValue = BigDecimal.valueOf(rangeSensor.getDistance(DistanceUnit.INCH)).setScale(2, RoundingMode.HALF_EVEN);
+
         drive = new SampleMecanumDrive(hardwareMap);
         drive.setPoseEstimate(new Pose2d(70.5 - 8 - correctedSensorValues.getClosest(sensorValue.doubleValue()), -63, Math.toRadians(90)));
 
@@ -241,15 +239,11 @@ public class RedRight extends LinearOpMode {
         turretSubsystem.isInterrupted = this::isStopRequested;
 
         autoContTurretThread = new AutoContTurretThread(drive::getPoseEstimate, firstJunction, turretSubsystem, linkageSubsystem, clawSubsystem, new AutoSlideThread(slideSubsystem), telemetry);
-        test = new Test(drive::getPoseEstimate, drive.getLocalizer()::getPoseVelocity, firstJunction, turretSubsystem, linkageSubsystem, clawSubsystem, new AutoSlideThread(slideSubsystem), telemetry);
         turretTurnThread = new TurretTurnThread(turretSubsystem,turnAngle,true);
         slideThread = new AutoSlideThread(slideSubsystem);
 
         autoContTurretThread.setDaemon(true);
         autoContTurretThread.setPriority(Thread.MIN_PRIORITY);
-
-        test.setDaemon(true);
-        test.setPriority(Thread.MIN_PRIORITY);
 
         traj1 = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
                 .splineToSplineHeading(new Pose2d(35.5, -35.5, Math.toRadians(90)), Math.toRadians(90),
@@ -382,17 +376,13 @@ public class RedRight extends LinearOpMode {
     }
 
     public void caseC(SampleMecanumDrive drive){
-        //autoContTurretThread.turretHomePosition = 40;
-        //autoContTurretThread.nextSlideLevel = slidePositions[0];
-        //autoContTurretThread.start();
-        test.turretHomePosition = 40;
-        test.nextSlideLevel = slidePositions[0];
-        test.start();
+        autoContTurretThread.turretHomePosition = 40;
+        autoContTurretThread.nextSlideLevel = slidePositions[0];
+        autoContTurretThread.start();
 
         drive.followTrajectorySequence(traj1);
 
-        //autoContTurretThread.interrupt();
-        test.interrupt();
+        autoContTurretThread.interrupt();
 
         Pose2d poseEstimate = drive.getPoseEstimate();
         double robotAngle = Math.toDegrees(poseEstimate.getHeading());
@@ -416,15 +406,11 @@ public class RedRight extends LinearOpMode {
 
         intakeRoutine(ticks - 120, 1);
 
-        //autoContTurretThread.turretHomePosition = Constants.TURRET_TURN_180;
-        //autoContTurretThread.nextSlideLevel = slidePositions[0];
-        //autoContTurretThread.junctionLocation = secondJunction;
-        //autoContTurretThread.start();
+        autoContTurretThread.turretHomePosition = Constants.TURRET_TURN_180;
+        autoContTurretThread.nextSlideLevel = slidePositions[0];
+        autoContTurretThread.junctionLocation = secondJunction;
+        autoContTurretThread.start();
 
-        test.turretHomePosition = Constants.TURRET_TURN_180;
-        test.nextSlideLevel = slidePositions[0];
-        test.junctionLocation = secondJunction;
-        test.start();
         drive.followTrajectorySequence(traj2);
     }
 
