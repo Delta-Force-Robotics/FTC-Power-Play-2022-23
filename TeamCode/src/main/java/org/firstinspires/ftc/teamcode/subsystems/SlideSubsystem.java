@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
-import com.arcrobotics.ftclib.controller.PIDFController;
+import org.firstinspires.ftc.teamcode.TeamUtils.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -15,10 +15,8 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
     public Motor slideMotorLeft;
     public Motor slideMotorRight;
     public BooleanSupplier isInterrupted;
-    private PIDFController pidfExtendLeft;
-    private PIDFController pidfExtendRight;
-    private PIDFController pidfRetractLeft;
-    private PIDFController pidfRetractRight;
+    private PIDFController pidfLeftSlideMotor;
+    private PIDFController pidfRightSlideMotor;
     private double[] pidfCoefficientsExtend;
     private double[] pidfCoefficientsRetract;
     private Telemetry telemetry;
@@ -68,110 +66,65 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
         double timerAverage = 0;
         int timerCount = 0;
 
-        if(!auto) {
-            pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
-            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
-        }
-        else {
-            pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p+0.02, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
-            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
-        }
-
-        pidfExtendLeft = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
-        pidfExtendRight = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
-        pidfRetractLeft = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
-        pidfRetractRight = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+        pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+        pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
 
         slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
         slideMotorRight.setRunMode(Motor.RunMode.RawPower);
 
-        if(slideMotorLeft.getCurrentPosition() - level < 0) {
-            pidfRetractRight.setSetPoint(level);
-            pidfRetractLeft.setSetPoint(level);
-
-            pidfRetractRight.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
-            pidfRetractLeft.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
-
-            while(!pidfRetractRight.atSetPoint() && !pidfRetractLeft.atSetPoint() && !isInterrupted.getAsBoolean()) {
-                double timeStart = System.nanoTime();
-
-                calculateRight = pidfRetractRight.calculate(slideMotorRight.getCurrentPosition(), level);
-                calculateLeft = pidfRetractLeft.calculate(slideMotorLeft.getCurrentPosition(), level);
-
-                slideMotorRight.set(
-                        pidfRetractRight.calculate(
-                                slideMotorRight.getCurrentPosition(),
-                                level
-                        ) - Constants.SLIDE_GRAVITY_COMPENSATOR
-                );
-
-                slideMotorLeft.set(
-                        pidfRetractLeft.calculate(
-                                slideMotorLeft.getCurrentPosition(),
-                                level
-                        ) - Constants.SLIDE_GRAVITY_COMPENSATOR
-                );
-
-                timerAverage += System.nanoTime() - timeStart;
-                timerCount++;
-
-                telemetry.addData("CalculateRight", calculateRight);
-                telemetry.addData("CalculateLeft", calculateLeft);
-
-                telemetry.addData("Slide Error", pidfRetractRight.getPositionError());
-
-                telemetry.update();
-            }
-
-            telemetry.addData("Loop Time Average", timerAverage / timerCount);
-            telemetry.addData("Slide Error", pidfRetractRight.getPositionError());
-            telemetry.update();
+        if(Math.signum(Constants.SLIDE_GR_JUNCTION)*(slideMotorLeft.getCurrentPosition() + level) > 0) {
+            pidfRightSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+            pidfLeftSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
         }
         else {
-            pidfExtendRight.setSetPoint(level);
-            pidfExtendLeft.setSetPoint(level);
+            pidfRightSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+            pidfLeftSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+        }
 
-            pidfExtendRight.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
-            pidfExtendLeft.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+        pidfRightSlideMotor.setSetPoint(level);
+        pidfLeftSlideMotor.setSetPoint(level);
 
-            while(!pidfExtendRight.atSetPoint() && !pidfExtendLeft.atSetPoint() && !isInterrupted.getAsBoolean()) {
-                double timeStart = System.nanoTime();
+        pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+        pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
 
-                slideMotorRight.set(
-                        pidfExtendRight.calculate(
-                                slideMotorRight.getCurrentPosition(),
-                                level
-                        )
-                );
+        pidfRightSlideMotor.setMaxErrorIntegration(5);
+        pidfLeftSlideMotor.setMaxErrorIntegration(5);
 
-                slideMotorLeft.set(
-                        pidfExtendLeft.calculate(
-                                slideMotorLeft.getCurrentPosition(),
-                                level
-                        )
-                );
+        while(!pidfLeftSlideMotor.atSetPoint() && !pidfRightSlideMotor.atSetPoint() && !isInterrupted.getAsBoolean()) {
+            double timeStart = System.nanoTime();
 
-                timerAverage += System.nanoTime() - timeStart;
-                timerCount++;
+            calculateRight = pidfRightSlideMotor.calculate(slideMotorRight.getCurrentPosition(), level);
+            calculateLeft = pidfLeftSlideMotor.calculate(slideMotorLeft.getCurrentPosition(), level);
 
-                telemetry.addData("Slide Error", pidfExtendRight.getPositionError());
-                telemetry.addData("Loop time", System.nanoTime() - timeStart);
-                telemetry.update();
-            }
+            slideMotorRight.set(
+                    pidfRightSlideMotor.calculate(
+                            slideMotorRight.getCurrentPosition(),
+                            level
+                    )
+            );
 
-            telemetry.addData("Loop Time Average", timerAverage / timerCount);
-            telemetry.addData("Slide Error", pidfExtendRight.getPositionError());
+            slideMotorLeft.set(
+                    pidfLeftSlideMotor.calculate(
+                            slideMotorLeft.getCurrentPosition(),
+                            level
+                    )
+            );
+
+            timerAverage += System.nanoTime() - timeStart;
+            timerCount++;
+
+            telemetry.addData("CalculateRight", calculateRight);
+            telemetry.addData("CalculateLeft", calculateLeft);
+
+            telemetry.addData("Slide Error", pidfLeftSlideMotor.getPositionError());
+
             telemetry.update();
         }
 
-        if (level <= -15) {
-            slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
-            slideMotorRight.setRunMode(Motor.RunMode.RawPower);
+        if (level <= -5) {
             slideMotorLeft.set(Constants.MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_HIGH_JUNCTION);
             slideMotorRight.set(Constants.MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_HIGH_JUNCTION);
         } else {
-            slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
-            slideMotorRight.setRunMode(Motor.RunMode.RawPower);
             slideMotorLeft.set(0);
             slideMotorRight.set(0);
         }
