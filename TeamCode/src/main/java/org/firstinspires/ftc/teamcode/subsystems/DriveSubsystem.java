@@ -6,19 +6,24 @@ import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
 public class DriveSubsystem extends SubsystemBase {
-    public Motor LeftFront;
+    private Motor leftFront;
     private Motor leftBack;
-    public Motor rightFront;
+    private Motor rightFront;
     private Motor rightBack;
     private final MecanumDrive mecanumDrive;
 
-    public DriveSubsystem(Motor LeftFront, Motor leftBack, Motor rightFront, Motor rightBack) {
-        this.LeftFront = LeftFront;
+    public DriveSubsystem(Motor leftFront, Motor leftBack, Motor rightFront, Motor rightBack) {
+        this.leftFront = leftFront;
         this.leftBack = leftBack;
         this.rightFront = rightFront;
         this.rightBack = rightBack;
 
-        mecanumDrive = new MecanumDrive(LeftFront, rightFront, leftBack, rightBack);
+        this.leftFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        this.rightFront.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        this.leftBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        this.rightBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+
+        mecanumDrive = new MecanumDrive(true, leftFront, rightFront, leftBack, rightBack);
     }
 
     /**
@@ -30,6 +35,6 @@ public class DriveSubsystem extends SubsystemBase {
      * @param gyro the IMU gyro angle
      */
     public void drive(double str, double fwd, double rot, double gyro) {
-        mecanumDrive.driveFieldCentric(-str, -fwd, -rot, gyro);
+        mecanumDrive.driveRobotCentric(str, -fwd, rot, true);
     }
 }

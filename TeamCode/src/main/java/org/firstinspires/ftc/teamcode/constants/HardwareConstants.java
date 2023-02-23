@@ -7,27 +7,24 @@ package org.firstinspires.ftc.teamcode.constants;
 
 public class HardwareConstants {
     // Drive motors
-    public static final String ID_LEFT_FRONT_MOTOR = "lf"; // stanga
-    public static final String ID_LEFT_BACK_MOTOR = "lb"; // mij
-    public static final String ID_RIGHT_FRONT_MOTOR = "rf"; // dr
+    public static final String ID_LEFT_FRONT_MOTOR = "lf";
+    public static final String ID_LEFT_BACK_MOTOR = "lb";
+    public static final String ID_RIGHT_FRONT_MOTOR = "rf";
     public static final String ID_RIGHT_BACK_MOTOR = "rb";
-
-    // Turret motor
-    public static final String ID_TURRET_MOTOR = "turretMotor";
 
     // Slide motors
     public static final String ID_SLIDE_MOTOR_LEFT = "slideMotorL";
     public static final String ID_SLIDE_MOTOR_RIGHT = "slideMotorR";
 
-    // Linkage servos
-    public static final String ID_SLIDE_LINKAGE_SERVO_LEFT = "linkageServoL";
-    public static final String ID_SLIDE_LINKAGE_SERVO_RIGHT = "linkageServoR";
-
     // Claw servos
-    public static final String ID_INTAKE_CLAW_SERVO_LEFT = "clawServoL";
-    public static final String ID_INTAKE_CLAW_SERVO_RIGHT = "clawServoR";
+    public static final String ID_INTAKE_CLAW_SERVO = "clawServo";
+    public static final String ID_FLIP_SERVO = "flipServo";
+    public static final String ID_PIVOT_SERVO_LEFT = "pivotServoLeft";
+    public static final String ID_PIVOT_SERVO_RIGHT = "pivotServoRight";
+    public static final String ID_ALIGN_SERVO = "alignServo";
 
-    public static final String ID_LEFT_ENCODER = "lf";
-    public static final String ID_RIGHT_ENCODER = "rf";
-    public static final String ID_LATERAL_ENCODER = "lb";
+    //dead wheels
+    public static final String ID_LEFT_ENCODER = "lf"; // primu port
+    public static final String ID_RIGHT_ENCODER = "rb"; // port 4
+    public static final String ID_LATERAL_ENCODER = "strafeEncoder"; // exp port 4
 }

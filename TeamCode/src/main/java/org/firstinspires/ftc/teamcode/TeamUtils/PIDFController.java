@@ -210,14 +210,14 @@ public class PIDFController {
          */
         if(Math.abs(errorVal_p) < maxErrorIntegration) {
             totalError += period * (setPoint - measuredValue);
-            totalError = totalError < minIntegral ? minIntegral : Math.min(maxIntegral, totalError);
+            totalError = totalError * kI < minIntegral ? minIntegral : Math.min(maxIntegral, totalError * kI);
         }
         else {
             totalError = 0;
         }
 
         // returns u(t)
-        return kP * errorVal_p + kI * totalError + kD * errorVal_v + kF * setPoint;
+        return kP * errorVal_p + totalError + kD * errorVal_v + kF * setPoint;
     }
 
     public void setPIDF(double kp, double ki, double kd, double kf) {

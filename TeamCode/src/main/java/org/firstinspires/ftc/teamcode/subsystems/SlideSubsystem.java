@@ -1,17 +1,14 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
-import org.firstinspires.ftc.teamcode.TeamUtils.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Interfaces.SlideInterface;
+import org.firstinspires.ftc.teamcode.TeamUtils.PIDFController;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 
-import java.util.Timer;
 import java.util.function.BooleanSupplier;
 
-public class SlideSubsystem extends SubsystemBase implements SlideInterface {
+public class SlideSubsystem extends SubsystemBase {
     public Motor slideMotorLeft;
     public Motor slideMotorRight;
     public BooleanSupplier isInterrupted;
@@ -19,9 +16,6 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
     private PIDFController pidfRightSlideMotor;
     private double[] pidfCoefficientsExtend;
     private double[] pidfCoefficientsRetract;
-    private Telemetry telemetry;
-
-    //test
     public double calculateLeft;
     public double calculateRight;
 
@@ -45,40 +39,45 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
 
     private SlideState slideState = SlideState.INTAKE;
 
-    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry) {
+    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, boolean resetEncoders) {
         this.slideMotorLeft = slideMotorLeft;
         this.slideMotorRight = slideMotorRight;
-        this.telemetry = telemetry;
+
+        this.slideMotorLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        this.slideMotorRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+
+        this.slideMotorRight.setInverted(true);
+
+        if(resetEncoders) {
+            this.slideMotorLeft.resetEncoder();
+            this.slideMotorRight.resetEncoder();
+        }
     }
 
     /**
      * Sets the extension level for the slides using a PID.
-     * @param level Intended level for slide extension.
+     * @param level Intended level for slide extension, in millimeters.
      */
-    @Override
-    public void setLevel(int level, boolean auto) {
+    public void setLevel(int level) {
         if(slideState.isSameSlideLevel(level)) {
             return;
         }
 
         slideState.setId(level);
 
-        double timerAverage = 0;
-        int timerCount = 0;
-
-        pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+        pidfCoefficientsExtend  = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
         pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
 
         slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
         slideMotorRight.setRunMode(Motor.RunMode.RawPower);
 
-        if(Math.signum(Constants.SLIDE_GR_JUNCTION)*(slideMotorLeft.getCurrentPosition() + level) > 0) {
-            pidfRightSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
-            pidfLeftSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+        if(Math.signum(Constants.SLIDE_GR_JUNCTION)*(slideMotorLeft.getCurrentPosition() - level) < 0) {
+            pidfRightSlideMotor = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
+            pidfLeftSlideMotor  = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
         }
         else {
             pidfRightSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
-            pidfLeftSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
+            pidfLeftSlideMotor  = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
         }
 
         pidfRightSlideMotor.setSetPoint(level);
@@ -87,43 +86,31 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
         pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
         pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
 
-        pidfRightSlideMotor.setMaxErrorIntegration(5);
-        pidfLeftSlideMotor.setMaxErrorIntegration(5);
+        pidfRightSlideMotor.setMaxErrorIntegration(20);
+        pidfLeftSlideMotor.setMaxErrorIntegration(20);
 
         while(!pidfLeftSlideMotor.atSetPoint() && !pidfRightSlideMotor.atSetPoint() && !isInterrupted.getAsBoolean()) {
-            double timeStart = System.nanoTime();
+            calculateRight = pidfRightSlideMotor.calculate(ticksToMm(slideMotorRight.getCurrentPosition()));
+            calculateLeft = pidfLeftSlideMotor.calculate(ticksToMm(slideMotorLeft.getCurrentPosition()));
 
-            calculateRight = pidfRightSlideMotor.calculate(slideMotorRight.getCurrentPosition(), level);
-            calculateLeft = pidfLeftSlideMotor.calculate(slideMotorLeft.getCurrentPosition(), level);
+            slideMotorRight.set(calculateRight);
+            slideMotorLeft.set(calculateLeft);
 
-            slideMotorRight.set(
-                    pidfRightSlideMotor.calculate(
-                            slideMotorRight.getCurrentPosition(),
-                            level
-                    )
-            );
+            if(isInterrupted.getAsBoolean()) {
+                slideMotorRight.set(0);
+                slideMotorLeft.set(0);
+            }
 
-            slideMotorLeft.set(
-                    pidfLeftSlideMotor.calculate(
-                            slideMotorLeft.getCurrentPosition(),
-                            level
-                    )
-            );
-
-            timerAverage += System.nanoTime() - timeStart;
-            timerCount++;
-
-            telemetry.addData("CalculateRight", calculateRight);
-            telemetry.addData("CalculateLeft", calculateLeft);
-
-            telemetry.addData("Slide Error", pidfLeftSlideMotor.getPositionError());
-
-            telemetry.update();
+            try {
+                Thread.sleep(12);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        if (level <= -5) {
-            slideMotorLeft.set(Constants.MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_HIGH_JUNCTION);
-            slideMotorRight.set(Constants.MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_HIGH_JUNCTION);
+        if (level >= 5) {
+            slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_MM);
+            slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_MM);
         } else {
             slideMotorLeft.set(0);
             slideMotorRight.set(0);
@@ -136,5 +123,13 @@ public class SlideSubsystem extends SubsystemBase implements SlideInterface {
 
     public void setSlideState(SlideState slideState) {
         this.slideState = slideState;
+    }
+
+    public double ticksToMm(int ticks) {
+        return (double) ticks / Constants.SLIDE_MAX_EXTENSION_TICKS * Constants.SLIDE_MAX_EXTENSION_MM;
+    }
+
+    public double mmToTicks(double mills) {
+        return Math.round(mills / Constants.SLIDE_MAX_EXTENSION_MM * Constants.SLIDE_MAX_EXTENSION_TICKS);
     }
 }
