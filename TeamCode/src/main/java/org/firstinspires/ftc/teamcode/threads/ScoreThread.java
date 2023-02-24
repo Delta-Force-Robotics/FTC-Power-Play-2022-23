@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 public class ScoreThread extends Thread {
     public SlideSubsystem slideSubsystem;
     public ScoreSubsystem scoreSubsystem;
+    public int levelForSlides = 0;
 
     public ScoreThread(SlideSubsystem slideSubsystem, ScoreSubsystem scoreSubsystem) {
         this.slideSubsystem = slideSubsystem;
@@ -34,7 +35,7 @@ public class ScoreThread extends Thread {
         }
 
         scoreSubsystem.flipClaw(Constants.FLIP_SERVO_INIT_POSITION);
-        slideSubsystem.setLevel(Constants.SLIDE_INTAKE);
+        slideSubsystem.setLevel(levelForSlides);
         scoreSubsystem.useAlign(Constants.ALIGN_SERVO_INIT_POSITION);
         scoreSubsystem.useClaw(Constants.OPEN_CLAW);
     }

@@ -1,15 +1,14 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.util.Timing;
+import com.outoftheboxrobotics.photoncore.PhotonCore;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
@@ -21,16 +20,12 @@ import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.vision.AprilTagDetectionPipeline;
 import org.openftc.apriltag.AprilTagDetection;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
 
-import java.util.ArrayList;
 import java.util.function.Consumer;
 
 @Autonomous
 public class RedLeft extends LinearOpMode {
-    OpenCvCamera camera;
+    //OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
     static final double FEET_PER_METER = 3.28084;
@@ -88,7 +83,7 @@ public class RedLeft extends LinearOpMode {
     private ScoreThread scoreThread;
 
     private Consumer<Integer> intakeThreadExecutor;
-    private InstantCommand scoreThreadExecutor;
+    private Consumer<Integer> scoreThreadExecutor;
 
     private Timing.Timer timer;
 
@@ -96,16 +91,18 @@ public class RedLeft extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        //PhotonCore.experimental.setSinglethreadedOptimized(false);
-        //PhotonCore.enable();
 
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
+        PhotonCore.enable();
+        PhotonCore.experimental.setSinglethreadedOptimized(false);
+        PhotonCore.experimental.setMaximumParallelCommands(14);
 
-        aprilTagDetectionPipeline.setDecimation(DECIMATION_LOW);
+        //int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        //camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        //aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
 
-        camera.setPipeline(aprilTagDetectionPipeline);
+        //aprilTagDetectionPipeline.setDecimation(DECIMATION_LOW);
+
+        /*camera.setPipeline(aprilTagDetectionPipeline);
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
@@ -119,7 +116,7 @@ public class RedLeft extends LinearOpMode {
             {
 
             }
-        });
+        });*/
 
         slideMotorLeft = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_LEFT);
         slideMotorRight = new Motor(hardwareMap, HardwareConstants.ID_SLIDE_MOTOR_RIGHT);
@@ -133,13 +130,7 @@ public class RedLeft extends LinearOpMode {
         slideMotorLeft.setInverted(true);
         pivotServoLeft.setDirection(Servo.Direction.REVERSE);
 
-        slideMotorLeft.resetEncoder();
-        slideMotorRight.resetEncoder();
-
-        slideMotorLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        slideMotorRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-
-        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, false);
+        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, true);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo);
 
         intakeThread = new IntakeThread(slideSubsystem, scoreSubsystem);
@@ -150,10 +141,11 @@ public class RedLeft extends LinearOpMode {
             intakeThread.start();
         };
 
-        scoreThreadExecutor = new InstantCommand(() -> {
+        /*scoreThreadExecutor = (Integer levelForSlides) -> {
+            scoreThread.levelForSlides = levelForSlides;
             scoreThread.interrupt();
             scoreThread.start();
-        });
+        };*/
 
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -165,13 +157,37 @@ public class RedLeft extends LinearOpMode {
         imu.initialize(parameters);
 
         drive = new SampleMecanumDrive(hardwareMap);
-        drive.setPoseEstimate(new Pose2d());
+        drive.setPoseEstimate(new Pose2d(-35, -62.5, Math.toRadians(-90)));
 
-        /*traj1 = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
-                        .lineToLinearHeading()*/
+        trajPreload = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+                .lineToSplineHeading(new Pose2d(-35, -26, Math.toRadians(-90)))
+                .splineToSplineHeading(new Pose2d(-33, -9, Math.toRadians(-135)), Math.toRadians(45))
+                .build();
+
+        trajToIntake = drive.trajectorySequenceBuilder(new Pose2d(-33, -9, Math.toRadians(-135)))
+                .lineToLinearHeading(new Pose2d(-55, -12, Math.toRadians(-180)))
+                .build();
+
+        trajToScore = drive.trajectorySequenceBuilder(trajToIntake.end())
+                .splineToLinearHeading(new Pose2d(-33, -9, Math.toRadians(-135)), Math.toRadians(30))
+                .build();
+
+        parkSpot1 = drive.trajectorySequenceBuilder(trajToScore.end())
+                .lineToLinearHeading(new Pose2d(-33, -12, Math.toRadians(-180)))
+                .lineToLinearHeading(new Pose2d(-58.5, -12, Math.toRadians(180)))
+                .build();
+
+        parkSpot2 = drive.trajectorySequenceBuilder(trajToScore.end())
+                .lineToLinearHeading(new Pose2d(-33, -12, Math.toRadians(-180)))
+                .build();
+
+        parkSpot3 = drive.trajectorySequenceBuilder(trajToScore.end())
+                .lineToLinearHeading(new Pose2d(-33, -12, Math.toRadians(-180)))
+                .lineToLinearHeading(new Pose2d(-10, -12, Math.toRadians(180)))
+                .build();
 
         telemetry.setMsTransmissionInterval(50);
-        while (!isStarted() && !isStopRequested())
+        /*while (!isStarted() && !isStopRequested())
         {
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
 
@@ -186,17 +202,19 @@ public class RedLeft extends LinearOpMode {
             }
 
             sleep(20);
-        }
+        }*/
 
-        Thread closeCamera = new Thread(() -> camera.closeCameraDevice());
-        closeCamera.start();
+        /*Thread closeCamera = new Thread(() -> camera.closeCameraDevice());
+        closeCamera.start();*/
 
         waitForStart();
 
         if(!isStopRequested()){
 
-            intakeRoutinePreload(drive, trajPreload);
-            scoreRoutine(drive, trajToIntake, 0);
+            intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION);
+
+            //intakeRoutine(drive, trajPreload);
+            /*scoreRoutine(drive, trajToIntake, 0);
 
             for(int slideLevel : slidePositions) {
 
@@ -205,7 +223,7 @@ public class RedLeft extends LinearOpMode {
                 scoreRoutine(drive, trajToIntake, slideLevel);
 
             }
-
+            tagID = Constants.APRIL_TAG_PARK_ZONE_1;
             if( tagID == Constants.APRIL_TAG_PARK_ZONE_1 ){
                 drive.followTrajectorySequence(parkSpot1);
             }
@@ -214,44 +232,37 @@ public class RedLeft extends LinearOpMode {
             }
             else {
                 drive.followTrajectorySequence(parkSpot3);
-            }
+            }*/
         }
-    }
-
-    public void intakeRoutinePreload(SampleMecanumDrive drive, TrajectorySequence traj){
-        intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION);
-
-        drive.followTrajectorySequence(traj);
-
-        sleep(200);
     }
 
     public void intakeRoutine(SampleMecanumDrive drive, TrajectorySequence traj){
 
         intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION);
 
-        drive.followTrajectorySequence(traj);
-
-        sleep(200);
+        //drive.followTrajectorySequence(traj);
     }
 
-    public void scoreRoutine(SampleMecanumDrive drive, TrajectorySequence traj, int slideLevel){
+    public void scoreRoutine(SampleMecanumDrive drive, TrajectorySequence traj, int levelForSlides){
 
         scoreSubsystem.useClaw(Constants.OPEN_CLAW);
-        scoreSubsystem.useAlign(Constants.ALIGN_SERVO_INIT_POSITION);
 
-        sleep(200);
+        sleep(400);
 
+        scoreSubsystem.useClaw(Constants.CLOSE_CLAW);
         scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_INIT_POSITION);
+
+        sleep(300);
+
         scoreSubsystem.flipClaw(Constants.FLIP_SERVO_INIT_POSITION);
-        slideSubsystem.setLevel(slideLevel);
+        slideSubsystem.setLevel(levelForSlides);
+        scoreSubsystem.useAlign(Constants.ALIGN_SERVO_INIT_POSITION);
+        scoreSubsystem.useClaw(Constants.OPEN_CLAW);
 
         drive.followTrajectorySequence(traj);
-
-        sleep(200);
     }
 
-    void tagToTelemetry(AprilTagDetection detection)
+    /*void tagToTelemetry(AprilTagDetection detection)
     {
         telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
         telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
@@ -260,5 +271,5 @@ public class RedLeft extends LinearOpMode {
         telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
         telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
-    }
+    }*/
 }

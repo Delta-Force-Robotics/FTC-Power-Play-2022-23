@@ -35,6 +35,6 @@ public class DriveSubsystem extends SubsystemBase {
      * @param gyro the IMU gyro angle
      */
     public void drive(double str, double fwd, double rot, double gyro) {
-        mecanumDrive.driveRobotCentric(str, -fwd, rot, true);
+        mecanumDrive.driveFieldCentric(str, -fwd, rot, gyro, true);
     }
 }

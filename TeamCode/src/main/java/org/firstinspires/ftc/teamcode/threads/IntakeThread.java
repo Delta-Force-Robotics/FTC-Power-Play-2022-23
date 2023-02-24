@@ -27,6 +27,7 @@ public class IntakeThread extends Thread{
         slideSubsystem.setLevel(slideLevel);
 
         if(slideLevel != Constants.SLIDE_GR_JUNCTION) {
+            scoreSubsystem.useAlign(Constants.ALIGN_SERVO_ALIGN_POSITION);
             scoreSubsystem.flipClaw(Constants.FLIP_SERVO_FLIP_POSITION);
 
             try {
@@ -36,7 +37,6 @@ public class IntakeThread extends Thread{
             }
 
             scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_PIVOT_POSITION);
-            scoreSubsystem.useAlign(Constants.ALIGN_SERVO_ALIGN_POSITION);
         }
         else {
             scoreSubsystem.flipClaw(Constants.FLIP_SERVO_FLIP_GR_POSITION);

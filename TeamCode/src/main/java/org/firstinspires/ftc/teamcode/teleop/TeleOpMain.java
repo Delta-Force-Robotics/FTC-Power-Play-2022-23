@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import com.arcrobotics.ftclib.command.CommandOpMode;
-import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.button.GamepadButton;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
@@ -50,7 +49,7 @@ public class TeleOpMain extends CommandOpMode {
     private ScoreThread scoreThread;
 
     private Consumer<Integer> intakeThreadExecutor;
-    private InstantCommand scoreThreadExecutor;
+    private Consumer<Integer> scoreThreadExecutor;
     private GamepadEx driver1;
 
     @Override
@@ -93,16 +92,17 @@ public class TeleOpMain extends CommandOpMode {
             intakeThread.start();
         };
 
-        scoreThreadExecutor = new InstantCommand(() -> {
+        scoreThreadExecutor = (Integer levelForSlides) -> {
+            scoreThread.levelForSlides = levelForSlides;
             scoreThread.interrupt();
             scoreThread.start();
-        });
+        };
 
         new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_GR_JUNCTION));
         new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_LOW_JUNCTION));
         new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_MID_JUNCTION));
         new GamepadButton(driver1, GamepadKeys.Button.Y).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION));
-        new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(scoreThreadExecutor);
+        new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(() -> scoreThreadExecutor.accept(Constants.SLIDE_INTAKE));
         driveSubsystem.setDefaultCommand(driveCommand);
     }
 }

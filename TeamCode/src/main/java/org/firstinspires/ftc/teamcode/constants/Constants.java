@@ -19,16 +19,15 @@ public class Constants {
 
     //Slide Subsystem/
     public static final int SLIDE_INTAKE = 0;
-    public static final int SLIDE_INTERMEDIARY = 65;
-    public static final int SLIDE_GR_JUNCTION = 65;
-    public static final int SLIDE_LOW_JUNCTION = 339;
-    public static final int SLIDE_MID_JUNCTION = 593;
-    public static int SLIDE_HIGH_JUNCTION = 662;
-    public static int SLIDE_MAX_EXTENSION_TICKS = 710;
+    public static final int SLIDE_GR_JUNCTION = 0;
+    public static final int SLIDE_LOW_JUNCTION = 162;
+    public static final int SLIDE_MID_JUNCTION = 382;
+    public static final int SLIDE_HIGH_JUNCTION = 642;
+    public static double SLIDE_MAX_EXTENSION_TICKS = 998;
     public static double SLIDE_MAX_EXTENSION_MM = 822.2;
     public static double SLIDE_GRAVITY_COMPENSATOR = 0.10;
     public static double SLIDE_MOTOR_PASSIVE_POWER = 0.3;
-    public static double SLIDE_ALLOWED_ERROR =  5;
+    public static double SLIDE_ALLOWED_ERROR = 20;
     public static PIDFCoefficients SLIDE_RETRACT_PIDF_COEFF = new PIDFCoefficients(0.0003, 0.004, 0.00005, 0);
     public static PIDFCoefficients SLIDE_EXTEND_PIDF_COEFF = new PIDFCoefficients(1, 0.2, 0, 0);
 

@@ -73,8 +73,8 @@ public class TeleOpSimple extends LinearOpMode {
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         clawServo.setPosition(0);
-        pivotServoLeft.setPosition(0);
-        pivotServoRight.setPosition(0);
+        pivotServoLeft.setPosition(0.05);
+        pivotServoRight.setPosition(0.05);
         flipServo.setPosition(0);
         alignServo.setPosition(0);
 

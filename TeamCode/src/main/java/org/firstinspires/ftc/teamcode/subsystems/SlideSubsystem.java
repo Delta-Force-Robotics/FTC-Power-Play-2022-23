@@ -65,13 +65,13 @@ public class SlideSubsystem extends SubsystemBase {
 
         slideState.setId(level);
 
-        pidfCoefficientsExtend  = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
-        pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+            pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
 
         slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
         slideMotorRight.setRunMode(Motor.RunMode.RawPower);
 
-        if(Math.signum(Constants.SLIDE_GR_JUNCTION)*(slideMotorLeft.getCurrentPosition() - level) < 0) {
+        if(Math.signum(Constants.SLIDE_HIGH_JUNCTION)*(slideMotorLeft.getCurrentPosition() - level) < 0) {
             pidfRightSlideMotor = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
             pidfLeftSlideMotor  = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
         }
@@ -86,8 +86,8 @@ public class SlideSubsystem extends SubsystemBase {
         pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
         pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
 
-        pidfRightSlideMotor.setMaxErrorIntegration(20);
-        pidfLeftSlideMotor.setMaxErrorIntegration(20);
+        pidfRightSlideMotor.setMaxErrorIntegration(30);
+        pidfLeftSlideMotor.setMaxErrorIntegration(30);
 
         while(!pidfLeftSlideMotor.atSetPoint() && !pidfRightSlideMotor.atSetPoint() && !isInterrupted.getAsBoolean()) {
             calculateRight = pidfRightSlideMotor.calculate(ticksToMm(slideMotorRight.getCurrentPosition()));
@@ -132,4 +132,8 @@ public class SlideSubsystem extends SubsystemBase {
     public double mmToTicks(double mills) {
         return Math.round(mills / Constants.SLIDE_MAX_EXTENSION_MM * Constants.SLIDE_MAX_EXTENSION_TICKS);
     }
+
+
+
+
 }
