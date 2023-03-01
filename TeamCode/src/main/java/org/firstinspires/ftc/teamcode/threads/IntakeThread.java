@@ -2,53 +2,64 @@ package org.firstinspires.ftc.teamcode.threads;
 
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.ScoreSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.SlideSubsystem;
 
-public class IntakeThread extends Thread{
-    public SlideSubsystem slideSubsystem;
+public class IntakeThread extends Thread {
+    public SlideThread slideThread;
     public ScoreSubsystem scoreSubsystem;
-    public int slideLevel = 0;
+    public double levelForSlides = 0;
+    boolean isAuto;
 
-    public IntakeThread(SlideSubsystem slideSubsystem, ScoreSubsystem scoreSubsystem) {
-        this.slideSubsystem = slideSubsystem;
+    public IntakeThread(SlideThread slideThread, ScoreSubsystem scoreSubsystem, boolean isAuto) {
+        this.slideThread = slideThread;
         this.scoreSubsystem = scoreSubsystem;
-        this.slideSubsystem.isInterrupted = this::isInterrupted;
+        this.isAuto = isAuto;
     }
 
-    @Override
     public void run() {
-        scoreSubsystem.useClaw(Constants.CLOSE_CLAW);
+        if(isAuto) {
+            scoreSubsystem.useClaw(Constants.CLOSE_CLAW_AUTO);
+        }
+        else {
+            scoreSubsystem.useClaw(Constants.CLOSE_CLAW_TELEOP);
+        }
+
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        slideSubsystem.setLevel(slideLevel);
-
-        if(slideLevel != Constants.SLIDE_GR_JUNCTION) {
+        if(levelForSlides != Constants.SLIDE_GR_JUNCTION) {
             scoreSubsystem.useAlign(Constants.ALIGN_SERVO_ALIGN_POSITION);
+
+            slideThread.slideLevel = levelForSlides;
+            slideThread.interrupt();
+            slideThread.start();
+
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             scoreSubsystem.flipClaw(Constants.FLIP_SERVO_FLIP_POSITION);
 
             try {
-                Thread.sleep(200);
+                Thread.sleep(250);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_PIVOT_POSITION);
         }
+
         else {
-            scoreSubsystem.flipClaw(Constants.FLIP_SERVO_FLIP_GR_POSITION);
-
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_PIVOT_POSITION);
-            scoreSubsystem.useAlign(Constants.ALIGN_SERVO_ALIGN_GR_POSITION);
+            scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_INIT_POSITION + 0.02);
         }
+    }
+
+    public void interrupt() {
+        Constants.SLIDE_INPUT_STATE = Constants.InputState.MANUAL_CONTROL;
+        super.interrupt();
     }
 }

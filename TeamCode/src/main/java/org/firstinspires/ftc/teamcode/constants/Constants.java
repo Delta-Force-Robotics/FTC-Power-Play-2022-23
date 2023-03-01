@@ -14,29 +14,38 @@ public class Constants {
     public enum InputState {
         MANUAL_CONTROL,
         PRESET_POSITIONS;
-
     }
 
+    public static InputState SLIDE_INPUT_STATE = InputState.MANUAL_CONTROL;
+
     //Slide Subsystem/
-    public static final int SLIDE_INTAKE = 0;
-    public static final int SLIDE_GR_JUNCTION = 0;
-    public static final int SLIDE_LOW_JUNCTION = 162;
-    public static final int SLIDE_MID_JUNCTION = 382;
-    public static final int SLIDE_HIGH_JUNCTION = 642;
-    public static double SLIDE_MAX_EXTENSION_TICKS = 998;
-    public static double SLIDE_MAX_EXTENSION_MM = 822.2;
-    public static double SLIDE_GRAVITY_COMPENSATOR = 0.10;
+    public static final double SLIDE_INTAKE = 0.0;
+    public static final double SLIDE_GR_JUNCTION = 0.0;
+    public static final double SLIDE_LOW_JUNCTION = 0.162;
+    public static final double SLIDE_MID_JUNCTION = 0.370;
+    public static final double SLIDE_HIGH_JUNCTION = 0.628;
+    public static final double SLIDE_HIGH_JUNCTION_AUTO = 0.64;
+    public static double SLIDE_MANUAL_CONTROL_MAX = 0.72;
+    public static double SLIDE_MAX_EXTENSION_TICKS = 1048;
+    public static double SLIDE_MAX_EXTENSION_METERS = 0.822;
+    public static double SLIDE_GRAVITY_COMPENSATOR = 0.1;
     public static double SLIDE_MOTOR_PASSIVE_POWER = 0.3;
-    public static double SLIDE_ALLOWED_ERROR = 20;
-    public static PIDFCoefficients SLIDE_RETRACT_PIDF_COEFF = new PIDFCoefficients(0.0003, 0.004, 0.00005, 0);
-    public static PIDFCoefficients SLIDE_EXTEND_PIDF_COEFF = new PIDFCoefficients(1, 0.2, 0, 0);
+    public static double SLIDE_ALLOWED_ERROR = 0.02;
+    public static double SLIDE_MAX_ERROR_INTEGRATION = 0.2;
+    public static final double[] SLIDE_POSITIONS = { 0.215, 0.18, 0.145, 0.1 };
+    public static PIDFCoefficients SLIDE_RETRACT_PIDF_COEFF = new PIDFCoefficients(0.01, 0.45, 0.0015, 0);
+    public static PIDFCoefficients SLIDE_EXTEND_PIDF_COEFF = new PIDFCoefficients(10, 0.13, 0.1, 0);
 
     //Claw Subsystem
     public static final double OPEN_CLAW = 0;
-    public static final double CLOSE_CLAW = 0.2;
+    public static final double CLOSE_CLAW_AUTO = 0.19;
+    public static final double CLOSE_CLAW_TELEOP = 0.17;
 
     public static final double PIVOT_SERVO_INIT_POSITION = 0.05;
     public static final double PIVOT_SERVO_PIVOT_POSITION = 0.76;
+    public static final double PIVOT_SERVO_INIT_AUTO_POSITION = 0.5;
+    public static final double PIVOT_SERVO_UP_POSSITION = 0.22;
+    public static final double PIVOT_SERVO_DOWN_POSSITION = 0.17;
 
     public static final double FLIP_SERVO_INIT_POSITION = 0;
     public static final double FLIP_SERVO_FLIP_POSITION = 0.55;
@@ -45,6 +54,9 @@ public class Constants {
     public static final double ALIGN_SERVO_INIT_POSITION = 0;
     public static final double ALIGN_SERVO_ALIGN_POSITION = 0.28;
     public static final double ALIGN_SERVO_ALIGN_GR_POSITION = 0;
+
+    public static final double ODOMETRY_SERVO_INIT_POSITION = 0;
+    public static final double ODOMETRY_SERVO_RETRACTED_POSITION = 1;
 
     //April Tag IDs
     public static final int APRIL_TAG_PARK_ZONE_1 = 13;

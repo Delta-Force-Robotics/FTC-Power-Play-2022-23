@@ -12,18 +12,27 @@ public class ScoreSubsystem extends SubsystemBase{
     private Servo flipServo;
     private Servo alignServo;
 
-    public ScoreSubsystem(Servo clawServo, Servo pivotServoL, Servo pivotServoR, Servo flipServo, Servo alignServo) {
+    public ScoreSubsystem(Servo clawServo, Servo pivotServoL, Servo pivotServoR, Servo flipServo, Servo alignServo, boolean isAuto) {
         this.clawServo = clawServo;
         this.pivotServoL = pivotServoL;
         this.pivotServoR = pivotServoR;
         this.flipServo = flipServo;
         this.alignServo = alignServo;
 
-        this.clawServo.setPosition(Constants.OPEN_CLAW);
-        this.pivotServoL.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
-        this.pivotServoR.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
-        this.flipServo.setPosition(Constants.FLIP_SERVO_INIT_POSITION);
-        this.alignServo.setPosition(Constants.ALIGN_SERVO_INIT_POSITION);
+        if(!isAuto) {
+            this.clawServo.setPosition(Constants.OPEN_CLAW);
+            this.pivotServoL.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
+            this.pivotServoR.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
+            this.flipServo.setPosition(Constants.FLIP_SERVO_INIT_POSITION);
+            this.alignServo.setPosition(Constants.ALIGN_SERVO_INIT_POSITION);
+        }
+        else {
+            this.clawServo.setPosition(Constants.CLOSE_CLAW_AUTO);
+            this.pivotServoL.setPosition(Constants.PIVOT_SERVO_INIT_AUTO_POSITION);
+            this.pivotServoR.setPosition(Constants.PIVOT_SERVO_INIT_AUTO_POSITION);
+            this.flipServo.setPosition(Constants.FLIP_SERVO_FLIP_POSITION);
+            this.alignServo.setPosition(Constants.ALIGN_SERVO_INIT_POSITION);
+        }
     }
 
     public void useClaw(double clawPosition) { clawServo.setPosition(clawPosition); }

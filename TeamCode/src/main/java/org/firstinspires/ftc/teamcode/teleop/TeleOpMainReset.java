@@ -8,6 +8,8 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.outoftheboxrobotics.photoncore.PhotonCore;
+import com.qualcomm.hardware.bosch.BNO055IMUNew;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -26,7 +28,7 @@ import org.firstinspires.ftc.teamcode.threads.SlideThread;
 import java.util.function.Consumer;
 
 @TeleOp
-public class TeleOpMain extends CommandOpMode {
+public class TeleOpMainReset extends CommandOpMode {
     private IMU imu;
     private Motor driveLeftFront;
     private Motor driveLeftBack;
@@ -95,7 +97,10 @@ public class TeleOpMain extends CommandOpMode {
 
         driver1 = new GamepadEx(gamepad1);
         driver2 = new GamepadEx(gamepad2);
+        BNO055IMUNew.Parameters parameters = new BNO055IMUNew.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
         imu = hardwareMap.get(IMU.class,"imu");
+        imu.initialize(parameters);
 
         driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX, imu);
         slideManualCommand = new SlideManualCommand(slideSubsystem, () -> driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER), () -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER));
@@ -144,3 +149,10 @@ public class TeleOpMain extends CommandOpMode {
         slideSubsystem.setDefaultCommand(slideManualCommand);
     }
 }
+
+/*
+        BNO055IMUNew.Parameters parameters = new BNO055IMUNew.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
+        imu = hardwareMap.get(IMU.class,"imu");
+        imu.initialize(parameters);
+ */

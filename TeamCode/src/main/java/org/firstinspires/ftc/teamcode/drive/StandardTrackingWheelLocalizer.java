@@ -44,17 +44,15 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
     private List<Integer> lastEncPositions, lastEncVels;
 
     public StandardTrackingWheelLocalizer(HardwareMap hardwareMap, List<Integer> lastTrackingEncPositions, List<Integer> lastTrackingEncVels) {
-        //FACETI BINE POZITIILE FATA DE CENTRUL DE ROTATIE, X E IN LUNGIME SI Y IN LATIME, AVETI POZA PE LEARN ROAD RUNNER
         super(Arrays.asList(
                 new Pose2d(1.9685, LATERAL_DISTANCE / 2, 0), // left
                 new Pose2d(-1.9685, -LATERAL_DISTANCE / 2, 0), // right
-                new Pose2d(FORWARD_OFFSET, 0, Math.toRadians(90)) // front
+                new Pose2d(FORWARD_OFFSET, 0.706, Math.toRadians(90)) // front
         ));
 
         lastEncPositions = lastTrackingEncPositions;
         lastEncVels = lastTrackingEncVels;
 
-        //NU VA ATINGETI DE CE E MAI JOS, AM LUCRAT EU ~FLOAREA
         leftEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, HardwareConstants.ID_LEFT_ENCODER));
         rightEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, HardwareConstants.ID_RIGHT_ENCODER));
         frontEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, HardwareConstants.ID_LATERAL_ENCODER));

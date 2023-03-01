@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.util.Encoder;
 
@@ -25,6 +26,7 @@ public class TeleOpSimple extends LinearOpMode {
     private Servo pivotServoLeft;
     private Servo pivotServoRight;
     private Servo alignServo;
+    private Servo odometryServo;
 
     private Encoder leftFwEncoder;
     private Encoder rightFwEncoder;
@@ -56,6 +58,7 @@ public class TeleOpSimple extends LinearOpMode {
         pivotServoLeft = hardwareMap.get(Servo.class, HardwareConstants.ID_PIVOT_SERVO_LEFT);
         pivotServoRight = hardwareMap.get(Servo.class, HardwareConstants.ID_PIVOT_SERVO_RIGHT);
         alignServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ALIGN_SERVO);
+        odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
 
         lf.setDirection(DcMotor.Direction.REVERSE);
         lb.setDirection(DcMotor.Direction.REVERSE);
@@ -72,11 +75,12 @@ public class TeleOpSimple extends LinearOpMode {
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        clawServo.setPosition(0);
-        pivotServoLeft.setPosition(0.05);
-        pivotServoRight.setPosition(0.05);
-        flipServo.setPosition(0);
-        alignServo.setPosition(0);
+        clawServo.setPosition(Constants.OPEN_CLAW);
+        pivotServoLeft.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
+        pivotServoRight.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
+        flipServo.setPosition(Constants.FLIP_SERVO_INIT_POSITION);
+        alignServo.setPosition(Constants.ALIGN_SERVO_INIT_POSITION);
+        odometryServo.setPosition(Constants.ODOMETRY_SERVO_RETRACTED_POSITION);
 
         rightSlideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         leftSlideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
@@ -143,6 +147,15 @@ public class TeleOpSimple extends LinearOpMode {
                 sleep(200);
             }
 
+            if(gamepad1.left_bumper) {
+                odometryServo.setPosition(odometryServo.getPosition() + 0.1);
+                sleep(200);
+            }
+            else if(gamepad1.right_bumper) {
+                odometryServo.setPosition(odometryServo.getPosition() - 0.1);
+                sleep(200);
+            }
+
             leftSlideMotor.set(gamepad1.right_trigger - gamepad1.left_trigger);
             rightSlideMotor.set(gamepad1.right_trigger - gamepad1.left_trigger);
 
@@ -154,6 +167,7 @@ public class TeleOpSimple extends LinearOpMode {
             telemetry.addData("Pivot Servo Left", pivotServoLeft.getPosition());
             telemetry.addData("Pivot Servo Right", pivotServoRight.getPosition());
             telemetry.addData("Align Servo", alignServo.getPosition());
+            telemetry.addData("Odometry Servo", odometryServo.getPosition());
             telemetry.addData("Strafe Encoder", strafeEncoder.getCurrentPosition());
             telemetry.addData("Right Encoder", rightFwEncoder.getCurrentPosition());
             telemetry.addData("Left Encoder", leftFwEncoder.getCurrentPosition());

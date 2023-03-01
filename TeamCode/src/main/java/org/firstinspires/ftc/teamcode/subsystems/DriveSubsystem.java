@@ -23,6 +23,11 @@ public class DriveSubsystem extends SubsystemBase {
         this.leftBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         this.rightBack.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
+        this.leftFront.setRunMode(Motor.RunMode.RawPower);
+        this.rightFront.setRunMode(Motor.RunMode.RawPower);
+        this.leftBack.setRunMode(Motor.RunMode.RawPower);
+        this.rightBack.setRunMode(Motor.RunMode.RawPower);
+
         mecanumDrive = new MecanumDrive(true, leftFront, rightFront, leftBack, rightBack);
     }
 
@@ -35,6 +40,10 @@ public class DriveSubsystem extends SubsystemBase {
      * @param gyro the IMU gyro angle
      */
     public void drive(double str, double fwd, double rot, double gyro) {
-        mecanumDrive.driveFieldCentric(str, -fwd, rot, gyro, true);
+        str = (Math.abs(str) >= 0.1) ? str : 0;
+        fwd = (Math.abs(fwd) >= 0.1) ? fwd : 0;
+        rot = (Math.abs(rot) >= 0.1) ? rot : 0;
+
+        mecanumDrive.driveFieldCentric(str, fwd, -rot, gyro, true);
     }
 }

@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static java.lang.Thread.sleep;
+
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.TeamUtils.PIDFController;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 
@@ -18,6 +21,7 @@ public class SlideSubsystem extends SubsystemBase {
     private double[] pidfCoefficientsRetract;
     public double calculateLeft;
     public double calculateRight;
+    private Telemetry telemetry;
 
     public enum SlideState {
         HIGH(Constants.SLIDE_HIGH_JUNCTION),
@@ -25,26 +29,29 @@ public class SlideSubsystem extends SubsystemBase {
         LOW(Constants.SLIDE_LOW_JUNCTION),
         INTAKE(Constants.SLIDE_INTAKE);
 
-        private int id;
-        SlideState(int slideLevel) {
+        private double id;
+        SlideState(double slideLevel) {
             id = slideLevel;
         }
 
-        int getId() { return id; }
-        void setId(int slideLevel) {
+        public double getId() { return id; }
+        public void setId(double slideLevel) {
             id = slideLevel;
         }
-        boolean isSameSlideLevel(int slideLevel) { return id == slideLevel; }
+        public boolean isSameSlideLevel(double slideLevel) { return id == slideLevel; }
     }
 
-    private SlideState slideState = SlideState.INTAKE;
+    public SlideState slideState = SlideState.INTAKE;
 
-    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, boolean resetEncoders) {
+    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry, boolean resetEncoders) {
         this.slideMotorLeft = slideMotorLeft;
         this.slideMotorRight = slideMotorRight;
 
         this.slideMotorLeft.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         this.slideMotorRight.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+
+        this.slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
+        this.slideMotorRight.setRunMode(Motor.RunMode.RawPower);
 
         this.slideMotorRight.setInverted(true);
 
@@ -52,30 +59,34 @@ public class SlideSubsystem extends SubsystemBase {
             this.slideMotorLeft.resetEncoder();
             this.slideMotorRight.resetEncoder();
         }
+
+        this.telemetry = telemetry;
     }
 
     /**
      * Sets the extension level for the slides using a PID.
      * @param level Intended level for slide extension, in millimeters.
      */
-    public void setLevel(int level) {
-        if(slideState.isSameSlideLevel(level)) {
-            return;
-        }
-
+    public void setLevel(double level) {
+        Constants.SLIDE_INPUT_STATE = Constants.InputState.PRESET_POSITIONS;
         slideState.setId(level);
 
-            pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
-            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+        try {
+            sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-        slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
-        slideMotorRight.setRunMode(Motor.RunMode.RawPower);
+        pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+        pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
 
-        if(Math.signum(Constants.SLIDE_HIGH_JUNCTION)*(slideMotorLeft.getCurrentPosition() - level) < 0) {
+        if(Math.signum(Constants.SLIDE_HIGH_JUNCTION)*(ticksToMeters(slideMotorLeft.getCurrentPosition()) - level) < 0) {
+            telemetry.addData("1", ticksToMeters(slideMotorLeft.getCurrentPosition()) - level);
             pidfRightSlideMotor = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
             pidfLeftSlideMotor  = new PIDFController(pidfCoefficientsExtend[0], pidfCoefficientsExtend[1], pidfCoefficientsExtend[2], pidfCoefficientsExtend[3]);
         }
         else {
+            telemetry.addData("2", ticksToMeters(slideMotorLeft.getCurrentPosition()) - level);
             pidfRightSlideMotor = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
             pidfLeftSlideMotor  = new PIDFController(pidfCoefficientsRetract[0], pidfCoefficientsRetract[1], pidfCoefficientsRetract[2], pidfCoefficientsRetract[3]);
         }
@@ -86,35 +97,50 @@ public class SlideSubsystem extends SubsystemBase {
         pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
         pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
 
-        pidfRightSlideMotor.setMaxErrorIntegration(30);
-        pidfLeftSlideMotor.setMaxErrorIntegration(30);
+        pidfRightSlideMotor.setMaxErrorIntegration(Constants.SLIDE_MAX_ERROR_INTEGRATION);
+        pidfLeftSlideMotor.setMaxErrorIntegration(Constants.SLIDE_MAX_ERROR_INTEGRATION);
 
         while(!pidfLeftSlideMotor.atSetPoint() && !pidfRightSlideMotor.atSetPoint() && !isInterrupted.getAsBoolean()) {
-            calculateRight = pidfRightSlideMotor.calculate(ticksToMm(slideMotorRight.getCurrentPosition()));
-            calculateLeft = pidfLeftSlideMotor.calculate(ticksToMm(slideMotorLeft.getCurrentPosition()));
+            calculateRight = pidfRightSlideMotor.calculate(ticksToMeters(slideMotorRight.getCurrentPosition()));
+            calculateLeft = pidfLeftSlideMotor.calculate(ticksToMeters(slideMotorLeft.getCurrentPosition()));
 
             slideMotorRight.set(calculateRight);
             slideMotorLeft.set(calculateLeft);
 
-            if(isInterrupted.getAsBoolean()) {
-                slideMotorRight.set(0);
-                slideMotorLeft.set(0);
-            }
+            telemetry.addData("slideMotorLeft", ticksToMeters(slideMotorLeft.getCurrentPosition()));
+            telemetry.addData("slideMotorRight", ticksToMeters(slideMotorRight.getCurrentPosition()));
+            telemetry.update();
 
             try {
-                Thread.sleep(12);
+                sleep(25);
             } catch (InterruptedException e) {
+                Constants.SLIDE_INPUT_STATE = Constants.InputState.MANUAL_CONTROL;
                 e.printStackTrace();
             }
         }
 
-        if (level >= 5) {
-            slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_MM);
-            slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_MM);
+        if (level >= 0.05) {
+            slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
+            slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
         } else {
             slideMotorLeft.set(0);
             slideMotorRight.set(0);
         }
+
+        Constants.SLIDE_INPUT_STATE = Constants.InputState.MANUAL_CONTROL;
+    }
+
+    public double getPassivePower() {
+        if(slideMotorLeft.getCurrentPosition() <= 0.05) {
+            return 0;
+        }
+
+       return Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)ticksToMeters(slideMotorLeft.getCurrentPosition())/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1;
+    }
+
+    public void setMotorPower( double power ) {
+        slideMotorLeft.set(power);
+        slideMotorRight.set(power);
     }
 
     public SlideState getSlideState() {
@@ -125,15 +151,19 @@ public class SlideSubsystem extends SubsystemBase {
         this.slideState = slideState;
     }
 
-    public double ticksToMm(int ticks) {
-        return (double) ticks / Constants.SLIDE_MAX_EXTENSION_TICKS * Constants.SLIDE_MAX_EXTENSION_MM;
+    public double ticksToMeters(int ticks) {
+        return (double) ticks / Constants.SLIDE_MAX_EXTENSION_TICKS * Constants.SLIDE_MAX_EXTENSION_METERS;
     }
 
-    public double mmToTicks(double mills) {
-        return Math.round(mills / Constants.SLIDE_MAX_EXTENSION_MM * Constants.SLIDE_MAX_EXTENSION_TICKS);
+    public double metersToTicks(double meters) {
+        return Math.round(meters / Constants.SLIDE_MAX_EXTENSION_METERS * Constants.SLIDE_MAX_EXTENSION_TICKS);
     }
 
+    public int getMotorTicks() {
+        return slideMotorLeft.getCurrentPosition();
+    }
 
-
-
+    public double getSlideExtensionMeters() {
+        return ticksToMeters(getMotorTicks());
+    }
 }

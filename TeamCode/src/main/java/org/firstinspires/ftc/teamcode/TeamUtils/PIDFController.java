@@ -217,7 +217,7 @@ public class PIDFController {
         }
 
         // returns u(t)
-        return kP * errorVal_p + totalError + kD * errorVal_v + kF * setPoint;
+        return kP * errorVal_p + totalError + kD * errorVal_v + kF;
     }
 
     public void setPIDF(double kp, double ki, double kd, double kf) {
