@@ -146,7 +146,7 @@ public class LeftFar extends LinearOpMode {
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, true);
         slideThread = new SlideThread(slideSubsystem);
 
-        intakeThread = new IntakeThread(slideThread, scoreSubsystem, true);
+            intakeThread = new IntakeThread(slideThread, scoreSubsystem, true);
         scoreThread = new ScoreThread(slideThread, scoreSubsystem);
 
         intakeThreadExecutor = (Double levelForSlides) -> {

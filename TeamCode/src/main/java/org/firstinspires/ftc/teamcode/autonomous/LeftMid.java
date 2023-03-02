@@ -62,7 +62,7 @@ public class LeftMid extends LinearOpMode {
 
     AprilTagDetection tagOfInterest = null;
 
-    double[] slidePositions = {0.18, 0.145, 0.1, 0.01, 0.0};  //{-450, -305, -215, -157, -10}
+    double[] slidePositions = {0.18, 0.14, 0.1, 0.01, 0.0};  //{-450, -305, -215, -157, -10}
     public int slideLevel;
 
     private SampleMecanumDrive drive;
@@ -75,7 +75,7 @@ public class LeftMid extends LinearOpMode {
     private TrajectorySequence trajPreload;
     private TrajectorySequence trajToIntake;
     private TrajectorySequence trajToScore;
-    private  TrajectorySequence trajToIntakeAfterPreload;
+    private TrajectorySequence trajToIntakeAfterPreload;
 
     private TrajectorySequence parkSpot1;
     private TrajectorySequence parkSpot2;
@@ -173,7 +173,7 @@ public class LeftMid extends LinearOpMode {
                 .lineToSplineHeading(new Pose2d(-35, -26, Math.toRadians(270)),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
-                .splineToSplineHeading(new Pose2d(-28, -7, Math.toRadians(225)), Math.toRadians(45),
+                .splineToSplineHeading(new Pose2d(-29.5, -7, Math.toRadians(225)), Math.toRadians(45),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
                 .build();
@@ -187,7 +187,7 @@ public class LeftMid extends LinearOpMode {
 
         trajToScore = drive.trajectorySequenceBuilder(new Pose2d(-64, -11.5, Math.toRadians(180)))
                 .setTangent(Math.toRadians(0))
-                .splineToSplineHeading(new Pose2d(-26, -21, Math.toRadians(135)), Math.toRadians(-30),
+                .splineToSplineHeading(new Pose2d(-26, -20, Math.toRadians(135)), Math.toRadians(-30),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
                 .build();
@@ -205,7 +205,7 @@ public class LeftMid extends LinearOpMode {
                 .build();
 
         parkSpot2 = drive.trajectorySequenceBuilder(trajToScore.end())
-                .lineToLinearHeading(new Pose2d(-36.5, -13, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(-36.5, -12, Math.toRadians(180)))
                 .build();
 
         parkSpot3 = drive.trajectorySequenceBuilder(trajToScore.end())
@@ -235,7 +235,7 @@ public class LeftMid extends LinearOpMode {
         if(!isStopRequested()){
             intakeRoutine(drive, trajPreload);
 
-            scoreRoutine(drive, trajToIntakeAfterPreload, 0.215);
+            scoreRoutine(drive, trajToIntakeAfterPreload, 0.220);
 
             for(double slideLevel : slidePositions) {
                 intakeRoutineMid(drive, trajToScore);

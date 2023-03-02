@@ -37,7 +37,7 @@ public class IntakeThread extends Thread {
             slideThread.start();
 
             try {
-                Thread.sleep(150);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

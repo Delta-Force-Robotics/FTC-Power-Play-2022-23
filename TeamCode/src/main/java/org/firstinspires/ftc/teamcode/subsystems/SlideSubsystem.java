@@ -94,8 +94,8 @@ public class SlideSubsystem extends SubsystemBase {
         pidfRightSlideMotor.setSetPoint(level);
         pidfLeftSlideMotor.setSetPoint(level);
 
-        pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
-        pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+        pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR, Constants.SLIDE_ALLOWED_VELOCITY_ERROR);
+        pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR, Constants.SLIDE_ALLOWED_VELOCITY_ERROR);
 
         pidfRightSlideMotor.setMaxErrorIntegration(Constants.SLIDE_MAX_ERROR_INTEGRATION);
         pidfLeftSlideMotor.setMaxErrorIntegration(Constants.SLIDE_MAX_ERROR_INTEGRATION);
@@ -115,6 +115,9 @@ public class SlideSubsystem extends SubsystemBase {
                 sleep(25);
             } catch (InterruptedException e) {
                 Constants.SLIDE_INPUT_STATE = Constants.InputState.MANUAL_CONTROL;
+                slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
+                slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
+
                 e.printStackTrace();
             }
         }
