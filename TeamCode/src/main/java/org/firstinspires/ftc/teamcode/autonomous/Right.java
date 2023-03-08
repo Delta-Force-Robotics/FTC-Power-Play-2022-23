@@ -62,7 +62,6 @@ public class Right extends LinearOpMode {
 
     AprilTagDetection tagOfInterest = null;
 
-    double[] slidePositions = {0.18, 0.145, 0.1, 0.01, 0.0};  //{-450, -305, -215, -157, -10}
     public int slideLevel;
 
     private SampleMecanumDrive drive;
@@ -141,9 +140,10 @@ public class Right extends LinearOpMode {
         odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
         odometryServo.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
 
-        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true);
+        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true, true);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, true);
         slideThread = new SlideThread(slideSubsystem);
+        slideSubsystem.isInterrupted = slideThread::isInterrupted;
 
         intakeThread = new IntakeThread(slideThread, scoreSubsystem, true);
         scoreThread = new ScoreThread(slideThread, scoreSubsystem);
@@ -177,7 +177,7 @@ public class Right extends LinearOpMode {
                         SampleMecanumDrive.getAccelerationConstraint(35))
                 .build();
 
-        trajToIntake = drive.trajectorySequenceBuilder(new Pose2d(28, -5, Math.toRadians(-60)))
+        trajToIntake = drive.trajectorySequenceBuilder(new Pose2d(28, -7, Math.toRadians(-45)))
                 .setTangent(Math.toRadians(-30))
                 .splineToSplineHeading(new Pose2d(64, -11.5, Math.toRadians(0)), Math.toRadians(0),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
@@ -186,18 +186,18 @@ public class Right extends LinearOpMode {
 
         trajToScore = drive.trajectorySequenceBuilder(trajToIntake.end())
                 .setTangent(Math.toRadians(180))
-                .splineToSplineHeading(new Pose2d(28, -5, Math.toRadians(-60)), Math.toRadians(135),
+                .splineToSplineHeading(new Pose2d(28, -4, Math.toRadians(-45)), Math.toRadians(150),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
                 .build();
 
         parkSpot1 = drive.trajectorySequenceBuilder(trajToScore.end())
                 .lineToLinearHeading(new Pose2d(35.5, -12, Math.toRadians(0)))
-                .lineToLinearHeading(new Pose2d(10, -12, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(12, -12, Math.toRadians(0)))
                 .build();
 
         parkSpot2 = drive.trajectorySequenceBuilder(trajToScore.end())
-                .lineToLinearHeading(new Pose2d(36.5, -13, Math.toRadians(0)))
+                .lineToLinearHeading(new Pose2d(38, -13, Math.toRadians(3)))
                 .build();
 
         parkSpot3 = drive.trajectorySequenceBuilder(trajToScore.end())
@@ -227,34 +227,26 @@ public class Right extends LinearOpMode {
         if(!isStopRequested()){
             intakeRoutine(drive, trajPreload);
 
-            scoreRoutine(drive, trajToIntake, 0.215);
+            scoreRoutine(drive, trajToIntake, 0.18);
 
-            for(double slideLevel : slidePositions) {
+            for(double slideLevel : Constants.SLIDE_POSITIONS_CONESTACK) {
                 intakeRoutine(drive, trajToScore);
 
                 scoreRoutine(drive, trajToIntake, slideLevel);
             }
-
-            sleep(30000);
         }
     }
 
     public void intakeRoutine(SampleMecanumDrive drive, TrajectorySequence traj){
         intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION_AUTO);
 
-        while(intakeThread.isAlive() && slideThread.isAlive()){
-
-        }
+        sleep(75);
 
         drive.followTrajectorySequence(traj);
     }
 
     public void scoreRoutine(SampleMecanumDrive drive, TrajectorySequence traj, Double levelForSlides){
         scoreThreadExecutor.accept(levelForSlides);
-
-        while(scoreThread.isAlive() && slideThread.isAlive()){
-
-        }
 
         if(levelForSlides == 0.0){
 
