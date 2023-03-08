@@ -24,7 +24,7 @@ public class IntakeThread extends Thread {
         }
 
         try {
-            Thread.sleep(200);
+            Thread.sleep(250);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -37,7 +37,7 @@ public class IntakeThread extends Thread {
             slideThread.start();
 
             try {
-                Thread.sleep(200);
+                Thread.sleep(250);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -50,7 +50,12 @@ public class IntakeThread extends Thread {
                 e.printStackTrace();
             }
 
-            scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_PIVOT_POSITION);
+            if(!isAuto && levelForSlides != Constants.SLIDE_HIGH_JUNCTION){
+                scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_PIVOT_POSITION_TELEOP);
+            }
+            else {
+                scoreSubsystem.pivotClaw(Constants.PIVOT_SERVO_PIVOT_POSITION);
+            }
         }
 
         else {

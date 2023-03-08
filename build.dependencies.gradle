@@ -24,7 +24,7 @@ dependencies {
     implementation 'org.openftc:easyopencv:1.6.1'
     implementation 'com.github.Thermal-Equilibrium:homeostasis-FTC:1.0.8'
 
-    implementation('com.acmerobotics.dashboard:dashboard:0.4.7') {
+    implementation('com.acmerobotics.dashboard:dashboard:0.4.6') {
         exclude group: 'org.firstinspires.ftc'
     }
 }

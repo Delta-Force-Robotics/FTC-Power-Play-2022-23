@@ -62,7 +62,6 @@ public class LeftFar extends LinearOpMode {
 
     AprilTagDetection tagOfInterest = null;
 
-    double[] slidePositions = {0.18, 0.145, 0.1, 0.01, 0.0};  //{-450, -305, -215, -157, -10}
     public int slideLevel;
 
     private SampleMecanumDrive drive;
@@ -142,11 +141,12 @@ public class LeftFar extends LinearOpMode {
         odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
         odometryServo.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
 
-        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true);
+        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true, true);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, true);
         slideThread = new SlideThread(slideSubsystem);
+        slideSubsystem.isInterrupted = slideThread::isInterrupted;
 
-            intakeThread = new IntakeThread(slideThread, scoreSubsystem, true);
+        intakeThread = new IntakeThread(slideThread, scoreSubsystem, true);
         scoreThread = new ScoreThread(slideThread, scoreSubsystem);
 
         intakeThreadExecutor = (Double levelForSlides) -> {
@@ -231,34 +231,26 @@ public class LeftFar extends LinearOpMode {
         if(!isStopRequested()){
             intakeRoutine(drive, trajPreload);
 
-            scoreRoutine(drive, trajToIntakeAfterPreload, 0.215);
+            scoreRoutine(drive, trajToIntakeAfterPreload, 0.18);
 
-            for(double slideLevel : slidePositions) {
+            for(double slideLevel : Constants.SLIDE_POSITIONS_CONESTACK) {
                 intakeRoutine(drive, trajToScore);
 
                 scoreRoutine(drive, trajToIntake, slideLevel);
             }
-
-            sleep(30000);
         }
     }
 
     public void intakeRoutine(SampleMecanumDrive drive, TrajectorySequence traj){
         intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION_AUTO);
 
-        while(intakeThread.isAlive() && slideThread.isAlive()){
-
-        }
+        sleep(50);
 
         drive.followTrajectorySequence(traj);
     }
 
     public void scoreRoutine(SampleMecanumDrive drive, TrajectorySequence traj, Double levelForSlides){
         scoreThreadExecutor.accept(levelForSlides);
-
-        while(scoreThread.isAlive() && slideThread.isAlive()){
-
-        }
 
         if(levelForSlides == 0.0){
 

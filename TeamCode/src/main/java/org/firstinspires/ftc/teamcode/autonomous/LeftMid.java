@@ -62,7 +62,6 @@ public class LeftMid extends LinearOpMode {
 
     AprilTagDetection tagOfInterest = null;
 
-    double[] slidePositions = {0.18, 0.14, 0.1, 0.01, 0.0};  //{-450, -305, -215, -157, -10}
     public int slideLevel;
 
     private SampleMecanumDrive drive;
@@ -142,9 +141,10 @@ public class LeftMid extends LinearOpMode {
         odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
         odometryServo.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
 
-        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true);
+        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true, true);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, true);
         slideThread = new SlideThread(slideSubsystem);
+        slideSubsystem.isInterrupted = slideThread::isInterrupted;
 
         intakeThread = new IntakeThread(slideThread, scoreSubsystem, true);
         scoreThread = new ScoreThread(slideThread, scoreSubsystem);
@@ -173,13 +173,13 @@ public class LeftMid extends LinearOpMode {
                 .lineToSplineHeading(new Pose2d(-35, -26, Math.toRadians(270)),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
-                .splineToSplineHeading(new Pose2d(-29.5, -7, Math.toRadians(225)), Math.toRadians(45),
+                .splineToSplineHeading(new Pose2d(-28, -7, Math.toRadians(225)), Math.toRadians(45),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
                 .build();
 
         trajToIntakeAfterPreload = drive.trajectorySequenceBuilder(trajPreload.end())
-                .setTangent(Math.toRadians(225))
+                .setTangent(Math.toRadians(210))
                 .splineToSplineHeading(new Pose2d(-64, -11.5, Math.toRadians(180)), Math.toRadians(180),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
@@ -187,7 +187,7 @@ public class LeftMid extends LinearOpMode {
 
         trajToScore = drive.trajectorySequenceBuilder(new Pose2d(-64, -11.5, Math.toRadians(180)))
                 .setTangent(Math.toRadians(0))
-                .splineToSplineHeading(new Pose2d(-26, -20, Math.toRadians(135)), Math.toRadians(-30),
+                .splineToSplineHeading(new Pose2d(-31, -19, Math.toRadians(135)), Math.toRadians(-30),
                         SampleMecanumDrive.getVelocityConstraint(35, DriveConstants.MAX_ANG_VEL, DriveConstants.TRACK_WIDTH),
                         SampleMecanumDrive.getAccelerationConstraint(35))
                 .build();
@@ -205,12 +205,12 @@ public class LeftMid extends LinearOpMode {
                 .build();
 
         parkSpot2 = drive.trajectorySequenceBuilder(trajToScore.end())
-                .lineToLinearHeading(new Pose2d(-36.5, -12, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(-38, -13, Math.toRadians(183)))
                 .build();
 
         parkSpot3 = drive.trajectorySequenceBuilder(trajToScore.end())
-                .lineToLinearHeading(new Pose2d(-35.5, -12, Math.toRadians(-180)))
-                .lineToLinearHeading(new Pose2d(-10, -12, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(-35.5, -12, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(-12, -12, Math.toRadians(180)))
                 .build();
 
         while (!isStarted() && !isStopRequested())
@@ -235,24 +235,20 @@ public class LeftMid extends LinearOpMode {
         if(!isStopRequested()){
             intakeRoutine(drive, trajPreload);
 
-            scoreRoutine(drive, trajToIntakeAfterPreload, 0.220);
+            scoreRoutine(drive, trajToIntakeAfterPreload, 0.18);
 
-            for(double slideLevel : slidePositions) {
+            for(double slideLevel : Constants.SLIDE_POSITIONS_CONESTACK) {
                 intakeRoutineMid(drive, trajToScore);
 
-                scoreRoutine(drive, trajToIntake, slideLevel);
+                scoreRoutine(drive, trajToIntake, slideLevel - 0.01);
             }
-
-            sleep(30000);
         }
     }
 
     public void intakeRoutine(SampleMecanumDrive drive, TrajectorySequence traj){
         intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION_AUTO);
 
-        while(intakeThread.isAlive() && slideThread.isAlive()){
-
-        }
+        sleep(50);
 
         drive.followTrajectorySequence(traj);
     }
@@ -261,20 +257,15 @@ public class LeftMid extends LinearOpMode {
 
         intakeThreadExecutor.accept(Constants.SLIDE_MID_JUNCTION);
 
-        while(intakeThread.isAlive() && slideThread.isAlive()){
-
-        }
+        sleep(50);
 
         drive.followTrajectorySequence(traj);
 
     }
 
     public void scoreRoutine(SampleMecanumDrive drive, TrajectorySequence traj, Double levelForSlides){
+        levelForSlides = Math.max(levelForSlides, 0.0);
         scoreThreadExecutor.accept(levelForSlides);
-
-        while(scoreThread.isAlive() && slideThread.isAlive()){
-
-        }
 
         if(levelForSlides == 0.0){
 

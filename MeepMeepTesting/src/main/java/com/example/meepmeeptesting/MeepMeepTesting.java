@@ -11,11 +11,31 @@ public class MeepMeepTesting {
 
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(35, 35, Math.toRadians(360), Math.toRadians(360), 10.94)
+                .setConstraints(35, 35, Math.toRadians(360), Math.toRadians(360), 14)
                 .followTrajectorySequence(drive ->
-                        drive.trajectorySequenceBuilder(new Pose2d(26, -21, Math.toRadians(60)))
-                                .lineToLinearHeading(new Pose2d(36.5, -12, Math.toRadians(0)))
+
+                        drive.trajectorySequenceBuilder(new Pose2d(-31, -17, Math.toRadians(135)))
+                                .setTangent(Math.toRadians(135))
+                                .splineToSplineHeading(new Pose2d(-58, -11.5, Math.toRadians(180)), Math.toRadians(180))
                                 .build());
+
+                        //SCORE
+                        /*drive.trajectorySequenceBuilder(new Pose2d(-61, -11.5, Math.toRadians(180)))
+                                .setTangent(Math.toRadians(0))
+                                .splineToSplineHeading(new Pose2d(-31, -17, Math.toRadians(135)), Math.toRadians(-30))
+                                .build());*/
+
+                        //TRAIECTORIE INTAKE AFTER PRELOAD
+                        /*drive.trajectorySequenceBuilder(new Pose2d(-31, -8, Math.toRadians(225)))
+                                .setTangent(Math.toRadians(210))
+                                .splineToSplineHeading(new Pose2d(-58, -11.5, Math.toRadians(180)), Math.toRadians(180))
+                                .build());*/
+
+                        //TRAIECTORIE PRELOAD
+                        /*drive.trajectorySequenceBuilder(new Pose2d(-35.5, -63.5, Math.toRadians(270)))
+                                .lineToSplineHeading(new Pose2d(-35, -26, Math.toRadians(270)))
+                                .splineToSplineHeading(new Pose2d(-31, -8, Math.toRadians(225)), Math.toRadians(45))
+                                .build());*/
 
                         //drive.trajectorySequenceBuilder(new Pose2d(-35.5, -62.5, Math.toRadians(90)))
                                 //.splineToSplineHeading(new Pose2d(-35.5, -23.5, Math.toRadians(90)), Math.toRadians(90))

@@ -47,4 +47,8 @@ public class ScoreSubsystem extends SubsystemBase{
     public void useAlign(double alignPosition) {
         alignServo.setPosition(alignPosition);
     }
+
+    public double getPivotServoLPos() {
+        return pivotServoL.getPosition();
+    }
 }

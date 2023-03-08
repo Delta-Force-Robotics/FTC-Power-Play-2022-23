@@ -22,6 +22,7 @@ public class SlideSubsystem extends SubsystemBase {
     public double calculateLeft;
     public double calculateRight;
     private Telemetry telemetry;
+    public boolean isAuto;
 
     public enum SlideState {
         HIGH(Constants.SLIDE_HIGH_JUNCTION),
@@ -43,7 +44,7 @@ public class SlideSubsystem extends SubsystemBase {
 
     public SlideState slideState = SlideState.INTAKE;
 
-    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry, boolean resetEncoders) {
+    public SlideSubsystem(Motor slideMotorLeft, Motor slideMotorRight, Telemetry telemetry, boolean resetEncoders, boolean isAuto) {
         this.slideMotorLeft = slideMotorLeft;
         this.slideMotorRight = slideMotorRight;
 
@@ -53,7 +54,7 @@ public class SlideSubsystem extends SubsystemBase {
         this.slideMotorLeft.setRunMode(Motor.RunMode.RawPower);
         this.slideMotorRight.setRunMode(Motor.RunMode.RawPower);
 
-        this.slideMotorRight.setInverted(true);
+        this.slideMotorLeft.setInverted(true);
 
         if(resetEncoders) {
             this.slideMotorLeft.resetEncoder();
@@ -61,6 +62,7 @@ public class SlideSubsystem extends SubsystemBase {
         }
 
         this.telemetry = telemetry;
+        this.isAuto = isAuto;
     }
 
     /**
@@ -77,8 +79,14 @@ public class SlideSubsystem extends SubsystemBase {
             e.printStackTrace();
         }
 
-        pidfCoefficientsExtend = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
-        pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+        if(isAuto) {
+            pidfCoefficientsExtend  = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF.p, Constants.SLIDE_EXTEND_PIDF_COEFF.i, Constants.SLIDE_EXTEND_PIDF_COEFF.d, Constants.SLIDE_EXTEND_PIDF_COEFF.f};
+            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF.p, Constants.SLIDE_RETRACT_PIDF_COEFF.i, Constants.SLIDE_RETRACT_PIDF_COEFF.d, Constants.SLIDE_RETRACT_PIDF_COEFF.f};
+        }
+        else {
+            pidfCoefficientsExtend  = new double[]{Constants.SLIDE_EXTEND_PIDF_COEFF_TELEOP.p, Constants.SLIDE_EXTEND_PIDF_COEFF_TELEOP.i, Constants.SLIDE_EXTEND_PIDF_COEFF_TELEOP.d, Constants.SLIDE_EXTEND_PIDF_COEFF_TELEOP.f};
+            pidfCoefficientsRetract = new double[]{Constants.SLIDE_RETRACT_PIDF_COEFF_TELEOP.p, Constants.SLIDE_RETRACT_PIDF_COEFF_TELEOP.i, Constants.SLIDE_RETRACT_PIDF_COEFF_TELEOP.d, Constants.SLIDE_RETRACT_PIDF_COEFF_TELEOP.f};
+        }
 
         if(Math.signum(Constants.SLIDE_HIGH_JUNCTION)*(ticksToMeters(slideMotorLeft.getCurrentPosition()) - level) < 0) {
             telemetry.addData("1", ticksToMeters(slideMotorLeft.getCurrentPosition()) - level);
@@ -94,8 +102,8 @@ public class SlideSubsystem extends SubsystemBase {
         pidfRightSlideMotor.setSetPoint(level);
         pidfLeftSlideMotor.setSetPoint(level);
 
-        pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR, Constants.SLIDE_ALLOWED_VELOCITY_ERROR);
-        pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR, Constants.SLIDE_ALLOWED_VELOCITY_ERROR);
+        pidfRightSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
+        pidfLeftSlideMotor.setTolerance(Constants.SLIDE_ALLOWED_ERROR);
 
         pidfRightSlideMotor.setMaxErrorIntegration(Constants.SLIDE_MAX_ERROR_INTEGRATION);
         pidfLeftSlideMotor.setMaxErrorIntegration(Constants.SLIDE_MAX_ERROR_INTEGRATION);
@@ -115,16 +123,16 @@ public class SlideSubsystem extends SubsystemBase {
                 sleep(25);
             } catch (InterruptedException e) {
                 Constants.SLIDE_INPUT_STATE = Constants.InputState.MANUAL_CONTROL;
-                slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
-                slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
+                slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)ticksToMeters(slideMotorLeft.getCurrentPosition())/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.15);
+                slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)ticksToMeters(slideMotorRight.getCurrentPosition())/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.15);
 
                 e.printStackTrace();
             }
         }
 
         if (level >= 0.05) {
-            slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
-            slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)level/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.1);
+            slideMotorLeft.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)ticksToMeters(slideMotorLeft.getCurrentPosition())/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.15);
+            slideMotorRight.set(Constants.SLIDE_MOTOR_PASSIVE_POWER * (double)ticksToMeters(slideMotorRight.getCurrentPosition())/(double)Constants.SLIDE_MAX_EXTENSION_METERS + 0.15);
         } else {
             slideMotorLeft.set(0);
             slideMotorRight.set(0);

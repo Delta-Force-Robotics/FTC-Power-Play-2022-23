@@ -92,7 +92,7 @@ public class TeleOpMainReset extends CommandOpMode {
 
         driveSubsystem = new DriveSubsystem(driveLeftFront, driveLeftBack, driveRightFront, driveRightBack);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, false);
-        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), false);
+        slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), false, false);
         slideThread = new SlideThread(slideSubsystem);
 
         driver1 = new GamepadEx(gamepad1);
@@ -101,6 +101,7 @@ public class TeleOpMainReset extends CommandOpMode {
         parameters.calibrationDataFile = "BNO055IMUCalibration.json";
         imu = hardwareMap.get(IMU.class,"imu");
         imu.initialize(parameters);
+        imu.resetYaw();
 
         driveCommand = new DriveCommand(driveSubsystem, driver1::getLeftX, driver1::getLeftY, driver1::getRightX, imu);
         slideManualCommand = new SlideManualCommand(slideSubsystem, () -> driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER), () -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER));
@@ -135,16 +136,16 @@ public class TeleOpMainReset extends CommandOpMode {
         });
 
         new GamepadButton(driver1, GamepadKeys.Button.A).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_GR_JUNCTION));
-        new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_LOW_JUNCTION));
-        new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_MID_JUNCTION));
+        new GamepadButton(driver1, GamepadKeys.Button.X).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_LOW_JUNCTION));
+        new GamepadButton(driver1, GamepadKeys.Button.B).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_MID_JUNCTION_TELEOP));
         new GamepadButton(driver1, GamepadKeys.Button.Y).whenPressed(() -> intakeThreadExecutor.accept(Constants.SLIDE_HIGH_JUNCTION));
         new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER).whenPressed(() -> scoreSequenceExecutor.accept(Constants.SLIDE_INTAKE));
         new GamepadButton(driver2, GamepadKeys.Button.A).whenPressed(pivotUp);
         new GamepadButton(driver2, GamepadKeys.Button.B).whenPressed(pivotDown);
-        new GamepadButton(driver2, GamepadKeys.Button.DPAD_UP).whenPressed(() -> slideThreadExecutor.accept(Constants.SLIDE_POSITIONS[0]));
-        new GamepadButton(driver2, GamepadKeys.Button.DPAD_LEFT).whenPressed(() -> slideThreadExecutor.accept(Constants.SLIDE_POSITIONS[1]));
-        new GamepadButton(driver2, GamepadKeys.Button.DPAD_RIGHT).whenPressed(() -> slideThreadExecutor.accept(Constants.SLIDE_POSITIONS[2]));
-        new GamepadButton(driver2, GamepadKeys.Button.DPAD_DOWN).whenPressed(() -> slideThreadExecutor.accept(Constants.SLIDE_POSITIONS[3]));
+        new GamepadButton(driver2, GamepadKeys.Button.DPAD_UP).whenPressed(() -> scoreSequenceExecutor.accept(Constants.SLIDE_POSITIONS_CONESTACK[0]));
+        new GamepadButton(driver2, GamepadKeys.Button.DPAD_LEFT).whenPressed(() -> scoreSequenceExecutor.accept(Constants.SLIDE_POSITIONS_CONESTACK[1]));
+        new GamepadButton(driver2, GamepadKeys.Button.DPAD_RIGHT).whenPressed(() -> scoreSequenceExecutor.accept(Constants.SLIDE_POSITIONS_CONESTACK[2]));
+        new GamepadButton(driver2, GamepadKeys.Button.DPAD_DOWN).whenPressed(() -> scoreSequenceExecutor.accept(Constants.SLIDE_POSITIONS_CONESTACK[3]));
         driveSubsystem.setDefaultCommand(driveCommand);
         slideSubsystem.setDefaultCommand(slideManualCommand);
     }
