@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.apache.commons.math3.analysis.function.Constant;
 import org.firstinspires.ftc.teamcode.constants.Constants;
 import org.firstinspires.ftc.teamcode.constants.HardwareConstants;
 import org.firstinspires.ftc.teamcode.util.Encoder;
@@ -26,7 +27,9 @@ public class TeleOpSimple extends LinearOpMode {
     private Servo pivotServoLeft;
     private Servo pivotServoRight;
     private Servo alignServo;
-    private Servo odometryServo;
+    private Servo odometryServoLeft;
+    private Servo odometryServoRight;
+    private Servo odometryServoStrafe;
 
     private Encoder leftFwEncoder;
     private Encoder rightFwEncoder;
@@ -58,7 +61,9 @@ public class TeleOpSimple extends LinearOpMode {
         pivotServoLeft = hardwareMap.get(Servo.class, HardwareConstants.ID_PIVOT_SERVO_LEFT);
         pivotServoRight = hardwareMap.get(Servo.class, HardwareConstants.ID_PIVOT_SERVO_RIGHT);
         alignServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ALIGN_SERVO);
-        odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
+        odometryServoLeft = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_LEFT);
+        odometryServoRight = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_RIGHT);
+        odometryServoStrafe = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_STRAFE);
 
         lf.setDirection(DcMotor.Direction.REVERSE);
         lb.setDirection(DcMotor.Direction.REVERSE);
@@ -75,17 +80,26 @@ public class TeleOpSimple extends LinearOpMode {
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        clawServo.setDirection(Servo.Direction.REVERSE);
+
         clawServo.setPosition(Constants.OPEN_CLAW);
         pivotServoLeft.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
         pivotServoRight.setPosition(Constants.PIVOT_SERVO_INIT_POSITION);
         flipServo.setPosition(Constants.FLIP_SERVO_INIT_POSITION);
         alignServo.setPosition(Constants.ALIGN_SERVO_INIT_POSITION);
-        odometryServo.setPosition(Constants.ODOMETRY_SERVO_RETRACTED_POSITION);
+
+        odometryServoLeft.setDirection(Servo.Direction.REVERSE);
+        odometryServoRight.setDirection(Servo.Direction.REVERSE);
+        odometryServoStrafe.setDirection(Servo.Direction.REVERSE);
+
+        odometryServoLeft.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
+        odometryServoRight.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
+        odometryServoStrafe.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
 
         rightSlideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         leftSlideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
 
-        rightSlideMotor.setInverted(true);
+        leftSlideMotor.setInverted(true);
 
         waitForStart();
 
@@ -148,11 +162,11 @@ public class TeleOpSimple extends LinearOpMode {
             }
 
             if(gamepad1.left_bumper) {
-                odometryServo.setPosition(odometryServo.getPosition() + 0.1);
+                odometryServoStrafe.setPosition(odometryServoStrafe.getPosition() + 0.01);
                 sleep(200);
             }
             else if(gamepad1.right_bumper) {
-                odometryServo.setPosition(odometryServo.getPosition() - 0.1);
+                odometryServoStrafe.setPosition(odometryServoStrafe.getPosition() - 0.01);
                 sleep(200);
             }
 
@@ -167,10 +181,12 @@ public class TeleOpSimple extends LinearOpMode {
             telemetry.addData("Pivot Servo Left", pivotServoLeft.getPosition());
             telemetry.addData("Pivot Servo Right", pivotServoRight.getPosition());
             telemetry.addData("Align Servo", alignServo.getPosition());
-            telemetry.addData("Odometry Servo", odometryServo.getPosition());
             telemetry.addData("Strafe Encoder", strafeEncoder.getCurrentPosition());
             telemetry.addData("Right Encoder", rightFwEncoder.getCurrentPosition());
             telemetry.addData("Left Encoder", leftFwEncoder.getCurrentPosition());
+            telemetry.addData("Odometry Servo Left", odometryServoLeft.getPosition());
+            telemetry.addData("Odometry Servo Right", odometryServoRight.getPosition());
+            telemetry.addData("Odometry Servo Strafe", odometryServoStrafe.getPosition());
             telemetry.update();
         }
     }

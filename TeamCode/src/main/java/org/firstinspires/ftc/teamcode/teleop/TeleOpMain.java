@@ -42,7 +42,11 @@ public class TeleOpMain extends CommandOpMode {
     private Servo pivotServoLeft;
     private Servo pivotServoRight;
     private Servo alignServo;
-    private Servo odometryServo;
+
+    private Servo odometryServoLeft;
+
+    private Servo odometryServoRight;
+    private Servo odometryServoStrafe;
 
     private DriveSubsystem driveSubsystem;
     private ScoreSubsystem scoreSubsystem;
@@ -87,8 +91,19 @@ public class TeleOpMain extends CommandOpMode {
         flipServo = hardwareMap.get(Servo.class, HardwareConstants.ID_FLIP_SERVO);
         alignServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ALIGN_SERVO);
 
-        odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
-        odometryServo.setPosition(Constants.ODOMETRY_SERVO_RETRACTED_POSITION);
+        clawServo.setDirection(Servo.Direction.REVERSE);
+
+        odometryServoLeft = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_LEFT);
+        odometryServoRight = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_RIGHT);
+        odometryServoStrafe = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_STRAFE);
+
+        odometryServoLeft.setPosition(Constants.ODOMETRY_LEFT_SERVO_RETRACTED_POSITION);
+        odometryServoRight.setPosition(Constants.ODOMETRY_RIGHT_SERVO_RETRACTED_POSITION);
+        odometryServoStrafe.setPosition(Constants.ODOMETRY_STRAFE_SERVO_RETRACTED_POSITION);
+
+        odometryServoLeft.setDirection(Servo.Direction.REVERSE);
+        odometryServoRight.setDirection(Servo.Direction.REVERSE);
+        odometryServoStrafe.setDirection(Servo.Direction.REVERSE);
 
         driveSubsystem = new DriveSubsystem(driveLeftFront, driveLeftBack, driveRightFront, driveRightBack);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, false);

@@ -63,7 +63,10 @@ public class Constants {
     public static final double ALIGN_SERVO_ALIGN_GR_POSITION = 0;
 
     public static final double ODOMETRY_SERVO_INIT_POSITION = 0;
-    public static final double ODOMETRY_SERVO_RETRACTED_POSITION = 1;
+
+    public static final double ODOMETRY_RIGHT_SERVO_RETRACTED_POSITION = 0.87;
+    public static final double ODOMETRY_LEFT_SERVO_RETRACTED_POSITION = 0.83;
+    public static final double ODOMETRY_STRAFE_SERVO_RETRACTED_POSITION = 0.45;
 
     //April Tag IDs
     public static final int APRIL_TAG_PARK_ZONE_1 = 13;

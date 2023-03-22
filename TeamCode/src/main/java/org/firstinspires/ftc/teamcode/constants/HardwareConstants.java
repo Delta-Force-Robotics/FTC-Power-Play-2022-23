@@ -27,5 +27,9 @@ public class HardwareConstants {
     public static final String ID_LEFT_ENCODER = "lf"; // primu port
     public static final String ID_RIGHT_ENCODER = "rb"; // port 4
     public static final String ID_LATERAL_ENCODER = "strafeEncoder"; // exp port 4
-    public static final String ID_ODOMETRY_SERVO = "odometryServo";
+
+    public static final String ID_ODOMETRY_SERVO_LEFT = "odometryServoLeft";
+
+    public static final String ID_ODOMETRY_SERVO_RIGHT = "odometryServoRight";
+    public static final String ID_ODOMETRY_SERVO_STRAFE = "odometryServoStrafe";
 }
