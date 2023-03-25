@@ -87,7 +87,10 @@ public class Left extends LinearOpMode {
     private Servo pivotServoRight;
     private Servo flipServo;
     private Servo alignServo;
-    private Servo odometryServo;
+
+    private Servo odometryServoLeft;
+
+    private Servo odometryServoRight;
 
     private SlideThread slideThread;
     private IntakeThread intakeThread;
@@ -137,8 +140,14 @@ public class Left extends LinearOpMode {
         pivotServoRight = hardwareMap.get(Servo.class, HardwareConstants.ID_PIVOT_SERVO_RIGHT);
         alignServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ALIGN_SERVO);
 
-        odometryServo = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO);
-        odometryServo.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
+        odometryServoLeft = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_LEFT);
+        odometryServoRight = hardwareMap.get(Servo.class, HardwareConstants.ID_ODOMETRY_SERVO_RIGHT);
+
+        odometryServoLeft.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
+        odometryServoRight.setPosition(Constants.ODOMETRY_SERVO_INIT_POSITION);
+
+        odometryServoLeft.setDirection(Servo.Direction.REVERSE);
+        odometryServoRight.setDirection(Servo.Direction.REVERSE);
 
         slideSubsystem = new SlideSubsystem(slideMotorLeft, slideMotorRight, FtcDashboard.getInstance().getTelemetry(), true, true);
         scoreSubsystem = new ScoreSubsystem(clawServo, pivotServoLeft, pivotServoRight, flipServo, alignServo, true);
