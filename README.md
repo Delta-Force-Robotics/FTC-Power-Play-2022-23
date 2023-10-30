@@ -25,7 +25,6 @@ Contains the general code for the TeleOperated period, meaning all instances, bu
 * [Subsystems](TeamCode/src/main/java/org/firstinspires/ftc/teamcode/subsystems)
   
 Contains code for all subsystems with one single implementation per subsystem, such as Drive Subsystem, Score Subsystem and Slide Subsystem.
-![Uploading FTC_NATIONALS_GITHUB_README.gif…]()
 
 Subsystems extend the Subsystem abstract class.
 
