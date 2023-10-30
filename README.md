@@ -2,6 +2,8 @@
 
 Our repository for the 2022-23 FIRST Tech Challenge Season "Power Play".
 
+![FTC_NATIONALS_GITHUB_README](https://github.com/Delta-Force-Robotics/FTC-Power-Play-2022-23/assets/115287980/a6652a81-153b-453b-af6f-4e8a38baed46)
+
 ## **Highlights** 
 
 * Field-Relative Mecanum Drive
@@ -23,6 +25,7 @@ Contains the general code for the TeleOperated period, meaning all instances, bu
 * [Subsystems](TeamCode/src/main/java/org/firstinspires/ftc/teamcode/subsystems)
   
 Contains code for all subsystems with one single implementation per subsystem, such as Drive Subsystem, Score Subsystem and Slide Subsystem.
+![Uploading FTC_NATIONALS_GITHUB_README.gif…]()
 
 Subsystems extend the Subsystem abstract class.
 
